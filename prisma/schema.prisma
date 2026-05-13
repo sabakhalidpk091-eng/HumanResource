@@ -1,0 +1,278 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               Int       @id @default(autoincrement())
+  username         String    @unique
+  email            String    @unique
+  passwordHash     String
+  role             Role
+  linkedEmployeeId Int?      @unique
+  createdAt        DateTime  @default(now())
+  name             String?
+  jobTitle         String?
+  timeZone         String?   @default("Asia/Karachi")
+  theme            String?   @default("system")
+  emailUpdates     Boolean?  @default(true)
+  taskReminders    Boolean?  @default(true)
+  securityAlerts   Boolean?  @default(true)
+  employee         Employee? @relation(fields: [linkedEmployeeId], references: [id])
+}
+
+model Employee {
+  id              Int                 @id @default(autoincrement())
+  name            String
+  email           String              @unique
+  phone           String?
+  department      String?
+  designation     String?
+  joiningDate     DateTime
+  status          EmployeeStatus      @default(ACTIVE)
+  baseSalary      Float?
+  allowance       Float?
+  offerLetterUrl  String?
+  workFormat      WorkFormat          @default(OFFICE)
+  annualBalance   Int                 @default(14)
+  sickBalance     Int                 @default(10)
+  casualBalance   Int                 @default(5)
+  employeeCode    String              @unique
+  employmentType  EmploymentType      @default(FULL_TIME)
+  cvUrl           String?
+  idDocumentUrl   String?
+  contractUrl     String?
+  attendance      Attendance[]
+  dailyReports    DailyReport[]
+  documents       EmployeeDocument[]
+  leaveRequests   LeaveRequest[]
+  performance     PerformanceReview[]
+  managedProjects Project[]           @relation("ProjectManager")
+  tasks           Task[]              @relation("TaskAssignee")
+  user            User?
+}
+
+model EmployeeDocument {
+  id           Int                  @id @default(autoincrement())
+  employeeId   Int
+  type         EmployeeDocumentType
+  originalName String
+  fileName     String
+  filePath     String
+  mimeType     String
+  uploadedAt   DateTime             @default(now())
+  uploadedBy   Int?
+  employee     Employee             @relation(fields: [employeeId], references: [id])
+}
+
+model Attendance {
+  id         Int       @id @default(autoincrement())
+  employeeId Int
+  date       DateTime
+  checkIn    DateTime?
+  checkOut   DateTime?
+  totalHours Float?
+  remarks    String?
+  status     String?
+  isLate     Boolean   @default(false)
+  isHalfDay  Boolean   @default(false)
+  isOvertime Boolean   @default(false)
+  employee   Employee  @relation(fields: [employeeId], references: [id])
+
+  @@unique([employeeId, date])
+}
+
+model LeaveType {
+  id       Int            @id @default(autoincrement())
+  name     String
+  isPaid   Boolean        @default(true)
+  requests LeaveRequest[]
+}
+
+model LeaveRequest {
+  id         Int       @id @default(autoincrement())
+  employeeId Int
+  typeId     Int
+  startDate  DateTime  @db.Timestamptz(6)
+  endDate    DateTime  @db.Timestamptz(6)
+  status     String    @default("pending")
+  reason     String?
+  createdAt  DateTime  @default(now()) @db.Timestamptz(6)
+  employee   Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "LeaveRequest_employee_fkey")
+  type       LeaveType @relation(fields: [typeId], references: [id], onUpdate: NoAction, map: "LeaveRequest_type_fkey")
+}
+
+model PerformanceReview {
+  id          Int      @id @default(autoincrement())
+  employeeId  Int
+  periodStart DateTime
+  periodEnd   DateTime
+  rating      Int
+  notes       String?
+  employee    Employee @relation(fields: [employeeId], references: [id])
+}
+
+model Project {
+  id               Int           @id @default(autoincrement())
+  name             String
+  description      String?
+  client           String?
+  startDate        DateTime
+  endDate          DateTime?
+  status           String        @default("active")
+  projectManagerId Int
+  dailyReports     DailyReport[]
+  projectManager   Employee      @relation("ProjectManager", fields: [projectManagerId], references: [id])
+  tasks            Task[]
+}
+
+model Task {
+  id             Int               @id @default(autoincrement())
+  title          String
+  description    String?
+  projectId      Int
+  assigneeId     Int
+  priority       String            @default("medium")
+  status         String            @default("todo")
+  dueDate        DateTime?
+  estimatedHours Float?
+  actualHours    Float?
+  createdAt      DateTime          @default(now()) @db.Timestamp(6)
+  updatedAt      DateTime          @default(now()) @updatedAt @db.Timestamp(6)
+  attachments    Attachment[]      @relation("TaskAttachments")
+  reports        DailyReportTask[]
+  assignee       Employee          @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  project        Project           @relation(fields: [projectId], references: [id])
+}
+
+model DailyReport {
+  id          Int               @id @default(autoincrement())
+  employeeId  Int
+  projectId   Int
+  date        DateTime
+  workSummary String
+  hours       Float
+  blockers    String?
+  attachments Attachment[]      @relation("ReportAttachments")
+  employee    Employee          @relation(fields: [employeeId], references: [id])
+  project     Project           @relation(fields: [projectId], references: [id])
+  tasks       DailyReportTask[]
+}
+
+model DailyReportTask {
+  id            Int         @id @default(autoincrement())
+  dailyReportId Int
+  taskId        Int
+  dailyReport   DailyReport @relation(fields: [dailyReportId], references: [id])
+  task          Task        @relation(fields: [taskId], references: [id])
+}
+
+model Attachment {
+  id            Int          @id @default(autoincrement())
+  relatedType   String
+  relatedId     Int
+  fileName      String
+  filePath      String
+  uploadedBy    Int
+  uploadedAt    DateTime     @default(now())
+  taskId        Int?
+  dailyReportId Int?
+  dailyReport   DailyReport? @relation("ReportAttachments", fields: [dailyReportId], references: [id])
+  task          Task?        @relation("TaskAttachments", fields: [taskId], references: [id])
+}
+
+model Vacancy {
+  id             Int       @id @default(autoincrement())
+  title          String
+  department     String
+  location       String
+  employmentType String    @default("Full-time")
+  status         String    @default("Open")
+  postedDate     DateTime? @db.Timestamp(6)
+  closingDate    DateTime? @db.Timestamp(6)
+  description    String?
+  createdAt      DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt      DateTime  @default(now()) @updatedAt @db.Timestamp(6)
+}
+
+model PayrollPeriod {
+  id          Int      @id @default(autoincrement())
+  month       Int      // 1–12
+  year        Int
+  startDate   DateTime
+  endDate     DateTime
+  status      String   // "OPEN" | "PROCESSING" | "PAID" | "CLOSED"
+  processedAt DateTime?
+  slips       SalarySlip[]
+
+  @@unique([month, year])
+}
+
+model SalarySlip {
+  id            Int      @id @default(autoincrement())
+  periodId      Int
+  employeeId    Int
+  basicSalary   Float    // from Employee.baseSalary
+  allowances    Float    // from Employee.allowance or extra
+  workingDays   Int      // days present in period
+  totalWorkDays Int      // total working days (e.g. Mon–Fri)
+  absences      Int      // full-day absences
+  halfDays      Int      // half-day counts
+  grossSalary   Float
+  totalDeductions Float
+  netSalary     Float
+  paymentStatus String   // "PENDING" | "PAID"
+  paidAt        DateTime?
+  slipUrl       String?  // path to generated PDF/HTML slip
+
+  employee      Employee     @relation(fields: [employeeId], references: [id])
+  period        PayrollPeriod @relation(fields: [periodId], references: [id])
+
+  @@unique([periodId, employeeId])
+}
+
+model Deduction {
+  id          Int     @id @default(autoincrement())
+  salarySlipId Int
+  type        String  // "ABSENCE" | "TAX" | "OTHER"
+  label       String  // "1 day absence", "Manual adjustment"
+  amount      Float
+  salarySlip  SalarySlip @relation(fields: [salarySlipId], references: [id])
+}
+
+enum Role {
+  Admin
+  HR
+  ProjectManager
+  Employee
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+  ON_LEAVE
+  TERMINATED
+}
+
+enum WorkFormat {
+  OFFICE
+  HYBRID
+  REMOTE
+}
+
+enum EmployeeDocumentType {
+  CV
+  ID_DOCUMENT
+  CONTRACT
+  OFFER_LETTER
+}
