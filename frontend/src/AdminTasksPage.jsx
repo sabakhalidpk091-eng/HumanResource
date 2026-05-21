@@ -22,9 +22,9 @@ export default function AdminTasksPage() {
             assigneeId: filterAssignee || undefined,
             projectId: filterProject || undefined,
           },
-        }),
-        api.get("/employees"),
-        api.get("/projects"),
+        }).catch(() => ({ data: [] })),
+        api.get("/employees").catch(() => ({ data: [] })),
+        api.get("/projects").catch(() => ({ data: [] })),
       ]);
 
       const empPayload = eRes.data;
@@ -34,9 +34,12 @@ export default function AdminTasksPage() {
         ? empPayload.data
         : [];
 
-      setTasks(tRes.data || []);
+      const tData = Array.isArray(tRes.data) ? tRes.data : (Array.isArray(tRes.data?.data) ? tRes.data.data : []);
+      const pData = Array.isArray(pRes.data) ? pRes.data : (Array.isArray(pRes.data?.data) ? pRes.data.data : []);
+
+      setTasks(tData);
       setEmployees(empArray);
-      setProjects(pRes.data || []);
+      setProjects(pData);
     } catch (err) {
       console.error("Admin tasks load error:", err);
       alert("Could not load tasks. Check console for details.");

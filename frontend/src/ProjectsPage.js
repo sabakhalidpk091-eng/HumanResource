@@ -33,12 +33,16 @@ export default function ProjectsPage() {
     setLoading(true);
     try {
       const [projRes, empRes, taskRes] = await Promise.all([
-        api.get("/projects"),
-        api.get("/employees"),
-        api.get("/tasks"),
+        api.get("/projects").catch(() => ({ data: [] })),
+        api.get("/employees").catch(() => ({ data: [] })),
+        api.get("/tasks").catch(() => ({ data: [] })),
       ]);
 
-      setProjects(projRes.data || []);
+      const pData = Array.isArray(projRes.data) ? projRes.data : (Array.isArray(projRes.data?.data) ? projRes.data.data : []);
+      const tData = Array.isArray(taskRes.data) ? taskRes.data : (Array.isArray(taskRes.data?.data) ? taskRes.data.data : []);
+
+      setProjects(pData);
+      setTasks(tData);
 
       const empPayload = empRes.data;
       const empArray = Array.isArray(empPayload)
@@ -47,8 +51,6 @@ export default function ProjectsPage() {
         ? empPayload.data
         : [];
       setEmployees(empArray);
-
-      setTasks(taskRes.data || []);
     } catch (err) {
       console.error("Error loading projects/employees/tasks:", err);
       alert("Could not load projects, employees, or tasks.");

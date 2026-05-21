@@ -38,13 +38,15 @@ export default function TasksPage() {
     setLoading(true);
     try {
       const [taskRes, projRes, empRes] = await Promise.all([
-        api.get("/tasks"),
-        api.get("/projects"),
-        api.get("/employees"),
+        api.get("/tasks").catch(() => ({ data: [] })),
+        api.get("/projects").catch(() => ({ data: [] })),
+        api.get("/employees").catch(() => ({ data: [] })),
       ]);
 
-      setTasks(taskRes.data || []);
-      setProjects(projRes.data || []);
+      const tData = Array.isArray(taskRes.data) ? taskRes.data : (Array.isArray(taskRes.data?.data) ? taskRes.data.data : []);
+      const pData = Array.isArray(projRes.data) ? projRes.data : (Array.isArray(projRes.data?.data) ? projRes.data.data : []);
+      setTasks(tData);
+      setProjects(pData);
 
       const empPayload = empRes.data;
       const empArray = Array.isArray(empPayload)

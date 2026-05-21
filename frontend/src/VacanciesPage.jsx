@@ -25,7 +25,8 @@ export default function VacanciesPage() {
     setError("");
     try {
       const res = await api.get("/vacancies");
-      setVacancies(res.data || []);
+      const vacData = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
+      setVacancies(vacData);
     } catch (err) {
       console.error("Error loading vacancies:", err);
       setError(err.response?.data?.error || "Could not load vacancies.");

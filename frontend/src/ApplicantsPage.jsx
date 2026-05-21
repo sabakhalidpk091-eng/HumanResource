@@ -21,11 +21,14 @@ export default function ApplicantsPage() {
     setLoading(true);
     try {
       const [appRes, vacRes] = await Promise.all([
-        api.get("/applicants"),
-        api.get("/vacancies"),
+        api.get("/applicants").catch(() => ({ data: [] })),
+        api.get("/vacancies").catch(() => ({ data: [] })),
       ]);
-      setApplicants(appRes.data || []);
-      setVacancies(vacRes.data || []);
+      const appData = Array.isArray(appRes.data) ? appRes.data : (Array.isArray(appRes.data?.data) ? appRes.data.data : []);
+      const vacData = Array.isArray(vacRes.data) ? vacRes.data : (Array.isArray(vacRes.data?.data) ? vacRes.data.data : []);
+      
+      setApplicants(appData);
+      setVacancies(vacData);
     } catch (err) {
       console.error("Error loading ATS data:", err);
     } finally {
