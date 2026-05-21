@@ -141,57 +141,55 @@ export default function DashboardPage() {
 const pageBg = {
   minHeight: "100vh",
   padding: 24,
-  background:
-    "linear-gradient(135deg, #020617 0%, #020617 35%, #e5e7eb 100%)",
-  fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI'",
+  background: "#0f1017",
+  fontFamily: "'Inter', 'Outfit', sans-serif",
+  color: "#ffffff"
 };
 
 const pageInner = {
-  maxWidth: 1100,
+  maxWidth: 1400,
   margin: "0 auto",
   display: "flex",
   flexDirection: "column",
-  gap: 18,
+  gap: 20,
 };
 
 const headerRow = {
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
-  padding: "12px 16px",
-  borderRadius: 18,
-  background: "rgba(15,23,42,0.96)",
-  border: "1px solid rgba(148,163,184,0.5)",
+  padding: "16px 24px",
+  borderRadius: 16,
+  background: "#12131c",
+  border: "1px solid #232533",
 };
 
 const eyebrow = {
   fontSize: 11,
-  letterSpacing: 1.5,
-  textTransform: "uppercase",
-  color: "#e5e7eb",
+  color: "#7c829e",
+  letterSpacing: 1,
+  fontWeight: 600,
   marginBottom: 4,
 };
 
 const title = {
   margin: 0,
-  fontSize: 22,
-  color: "#f9fafb",
+  fontSize: 24,
+  color: "#ffffff",
+  letterSpacing: "-0.5px"
 };
 
 const badge = {
-  padding: "8px 12px",
-  borderRadius: 999,
-  background: "#f9fafb",
-  border: "1px solid #e5e7eb",
   display: "flex",
   flexDirection: "column",
+  textAlign: "right"
 };
 
 const glassCard = {
-  background: "rgba(248, 250, 252, 0.96)",
-  borderRadius: 24,
-  border: "1px solid #e5e7eb",
-  boxShadow: "0 10px 30px rgba(15, 23, 42, 0.12)",
+  background: "#12131c",
+  borderRadius: 16,
+  border: "1px solid #232533",
+  boxShadow: "0 10px 30px rgba(0,0,0,0.2)"
 };
 
 const cardsRow = {
@@ -202,36 +200,40 @@ const cardsRow = {
 
 const card = {
   ...glassCard,
-  padding: 16,
-  color: "#111827",
+  padding: 24,
+  color: "#ffffff",
 };
 
 const cardTitle = {
-  margin: "0 0 6px 0",
-  fontSize: 14,
+  margin: "0 0 12px 0",
+  fontSize: 16,
   fontWeight: 600,
+  color: "#7c829e"
 };
 
 const bigNumber = {
-  margin: "4px 0",
-  fontSize: 26,
+  margin: "4px 0 12px 0",
+  fontSize: 32,
   fontWeight: 700,
+  color: "#ffffff"
 };
 
 const smallLine = {
-  margin: "2px 0",
-  fontSize: 12,
-  color: "#4b5563",
+  margin: "4px 0",
+  fontSize: 13,
+  color: "#7c829e",
 };
 
 const chartCard = {
   ...glassCard,
-  padding: 16,
+  padding: 24,
 };
 
 const chartTitle = {
   marginTop: 0,
-  marginBottom: 8,
-  fontSize: 16,
-  color: "#111827",
+  marginBottom: 20,
+  fontSize: 18,
+  color: "#ffffff",
+  fontWeight: 600,
+  letterSpacing: "-0.3px"
 };

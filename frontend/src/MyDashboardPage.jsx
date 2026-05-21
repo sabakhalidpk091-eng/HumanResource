@@ -15,7 +15,25 @@ import LeaveAdminPage from "./LeaveAdminPage";
 import MyDashboardContent from "./MyDashboardContent";
 import LeaveSummaryPage from "./LeaveSummaryPage";
 import AttendancePage from "./AttendancePage";
-import MarkAttendancePage from "./MarkAttendancePage"; // <-- added
+import MarkAttendancePage from "./MarkAttendancePage";
+import PerformancePage from "./PerformancePage";
+import AssetsPage from "./AssetsPage";
+import ApplicantsPage from "./ApplicantsPage";
+import TrainingPage from "./TrainingPage";
+import PayrollPage from "./PayrollPage";
+import { 
+  LayoutDashboard, 
+  Users, 
+  Briefcase, 
+  CheckSquare, 
+  Settings, 
+  FileText, 
+  Calendar, 
+  UserCheck, 
+  GraduationCap, 
+  Package, 
+  BarChart3
+} from "lucide-react";
 
 export default function MyDashboardPage() {
   const { user, logout } = useAuth();
@@ -23,7 +41,7 @@ export default function MyDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [activePage, setActivePage] = useState("my-dashboard");
+  const [activePage, setActivePage] = useState("analytics");
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   const [searchOpen, setSearchOpen] = useState(false);
@@ -61,19 +79,8 @@ export default function MyDashboardPage() {
     );
   }
 
-  if (!data || data.hasEmployeeRecord === false) {
-    return (
-      <div style={{ padding: 24 }}>
-        <h2>My Dashboard</h2>
-        <p>
-          No linked employee record found for user <b>{user.username}</b>. Ask
-          an admin or HR to create and link an Employee record.
-        </p>
-      </div>
-    );
-  }
-
-  const { employee = {} } = data;
+  const { employee = {} } = data || {};
+  const hasEmployeeRecord = data?.hasEmployeeRecord !== false;
   const displayName = employee.name || user.username || "User";
   const designation = employee.designation || "Employee";
 
@@ -87,6 +94,29 @@ export default function MyDashboardPage() {
         return <TasksPage />;
       case "analytics":
         return <DashboardPage />;
+      case "my-dashboard":
+        if (!hasEmployeeRecord) {
+          return (
+            <div style={emptyStateCard}>
+              <h2 style={{ marginTop: 0 }}>Personal Dashboard</h2>
+              <p style={{ marginBottom: 0 }}>
+                Is account ke saath abhi linked employee record nahin hai. Aap
+                admin pages use kar sakte ho, ya phir HR se employee profile
+                link karwa sakte ho.
+              </p>
+            </div>
+          );
+        }
+        return (
+          <MyDashboardContent
+            user={user}
+            data={data}
+            searchOpen={searchOpen}
+            searchQuery={searchQuery}
+            setSearchOpen={setSearchOpen}
+            setSearchQuery={setSearchQuery}
+          />
+        );
       case "vacancies":
         return <VacanciesPage />;
       case "settings":
@@ -105,18 +135,18 @@ export default function MyDashboardPage() {
         return <AttendancePage />;
       case "mark-attendance":
         return <MarkAttendancePage />;
-      case "my-dashboard":
+      case "performance":
+        return <PerformancePage />;
+      case "assets":
+        return <AssetsPage />;
+      case "applicants":
+        return <ApplicantsPage />;
+      case "training":
+        return <TrainingPage />;
+      case "payroll":
+        return <PayrollPage />;
       default:
-        return (
-          <MyDashboardContent
-            user={user}
-            data={data}
-            searchOpen={searchOpen}
-            searchQuery={searchQuery}
-            setSearchOpen={setSearchOpen}
-            setSearchQuery={setSearchQuery}
-          />
-        );
+        return <DashboardPage />;
     }
   };
 
@@ -140,71 +170,79 @@ export default function MyDashboardPage() {
 
           <div style={sidebarNav}>
             <SidebarItem
-              label="Dashboard"
+              icon={<LayoutDashboard size={18} />}
+              label="Overview"
+              active={activePage === "analytics"}
+              onClick={() => setActivePage("analytics")}
+            />
+            <SidebarItem
+              icon={<LayoutDashboard size={18} />}
+              label="My dashboard"
               active={activePage === "my-dashboard"}
               onClick={() => setActivePage("my-dashboard")}
             />
             <SidebarItem
+              icon={<FileText size={18} />}
               label="Vacancies"
               active={activePage === "vacancies"}
               onClick={() => setActivePage("vacancies")}
             />
             <SidebarItem
+              icon={<Users size={18} />}
+              label="Applicants"
+              active={activePage === "applicants"}
+              onClick={() => setActivePage("applicants")}
+            />
+            <SidebarItem
+              icon={<GraduationCap size={18} />}
+              label="Training"
+              active={activePage === "training"}
+              onClick={() => setActivePage("training")}
+            />
+            <SidebarItem
+              icon={<BarChart3 size={18} />}
+              label="Payroll"
+              active={activePage === "payroll"}
+              onClick={() => setActivePage("payroll")}
+            />
+            <SidebarItem
+              icon={<Users size={18} />}
               label="Employees"
               active={activePage === "employees"}
               onClick={() => setActivePage("employees")}
             />
             <SidebarItem
+              icon={<UserCheck size={18} />}
               label="Users"
               active={activePage === "users"}
               onClick={() => setActivePage("users")}
             />
             <SidebarItem
+              icon={<Briefcase size={18} />}
               label="Projects"
               active={activePage === "projects"}
               onClick={() => setActivePage("projects")}
             />
             <SidebarItem
+              icon={<CheckSquare size={18} />}
               label="Tasks"
               active={activePage === "tasks"}
               onClick={() => setActivePage("tasks")}
             />
             <SidebarItem
-              label="All tasks"
-              active={activePage === "all-tasks"}
-              onClick={() => setActivePage("all-tasks")}
-            />
-            <SidebarItem
-              label="My leave"
-              active={activePage === "my-leave"}
-              onClick={() => setActivePage("my-leave")}
-            />
-            <SidebarItem
-              label="Leave admin"
-              active={activePage === "leave-admin"}
-              onClick={() => setActivePage("leave-admin")}
-            />
-            <SidebarItem
-              label="Leave summary"
-              active={activePage === "leave-summary"}
-              onClick={() => setActivePage("leave-summary")}
-            />
-            <SidebarItem
-              label="Mark attendance"
-              active={activePage === "mark-attendance"}
-              onClick={() => setActivePage("mark-attendance")}
-            />
-            <SidebarItem
+              icon={<Calendar size={18} />}
               label="Attendance"
               active={activePage === "attendance"}
               onClick={() => setActivePage("attendance")}
             />
             <SidebarItem
-              label="Analytics"
-              active={activePage === "analytics"}
-              onClick={() => setActivePage("analytics")}
+              icon={<Package size={18} />}
+              label="Assets"
+              active={activePage === "assets"}
+              onClick={() => setActivePage("assets")}
             />
             <SidebarItem
+              icon={<Settings size={18} />}
               label="Settings"
               active={activePage === "settings"}
               onClick={() => setActivePage("settings")}
@@ -252,33 +290,42 @@ export default function MyDashboardPage() {
 
 /* small components + styles reused from your previous file */
 
-function SidebarItem({ label, active, onClick }) {
+function SidebarItem({ icon, label, active, onClick }) {
   return (
     <div
       onClick={onClick}
       style={{
         display: "flex",
         alignItems: "center",
-        gap: 10,
-        padding: "8px 12px",
-        borderRadius: 999,
+        gap: 12,
+        padding: "10px 16px",
+        borderRadius: 12,
         marginBottom: 4,
         cursor: "pointer",
-        fontSize: 13,
-        color: active ? "#e5e7eb" : "#9ca3af",
+        fontSize: 14,
+        fontWeight: 500,
+        color: active ? "var(--text-main)" : "var(--text-muted)",
         background: active
-          ? "rgba(148, 163, 184, 0.35)"
+          ? "var(--accent-soft)"
           : "transparent",
+        transition: "all 0.2s ease",
+      }}
+      onMouseEnter={(e) => {
+        if(!active) e.currentTarget.style.background = "rgba(255,255,255,0.05)";
+      }}
+      onMouseLeave={(e) => {
+        if(!active) e.currentTarget.style.background = "transparent";
       }}
     >
       <div
         style={{
-          width: 4,
-          height: 4,
-          borderRadius: "50%",
-          background: active ? "#a3e635" : "#4b5563",
+          color: active ? "var(--accent-strong)" : "inherit",
+          display: "flex",
+          alignItems: "center",
         }}
-      />
+      >
+        {icon}
+      </div>
       <span>{label}</span>
     </div>
   );
@@ -287,49 +334,49 @@ function SidebarItem({ label, active, onClick }) {
 const page = {
   display: "flex",
   minHeight: "100vh",
-  background:
-    "linear-gradient(135deg, #020617 0%, #0f172a 35%, #e5e7eb 100%)",
-  color: "#111827",
-  fontFamily:
-    "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI'",
+  background: "#0f1017",
+  color: "#ffffff",
+  fontFamily: "'Inter', 'Outfit', sans-serif",
 };
 
 const sidebar = {
-  width: 230,
-  padding: 20,
+  width: 250,
+  padding: 24,
   display: "flex",
   flexDirection: "column",
   justifyContent: "space-between",
-  background: "rgba(15, 23, 42, 0.96)",
-  color: "#e5e7eb",
+  background: "#12131c",
+  color: "#ffffff",
+  borderRight: "1px solid #232533",
 };
 
 const sidebarHeader = {
   display: "flex",
   alignItems: "center",
-  gap: 10,
-  marginBottom: 24,
+  gap: 12,
+  marginBottom: 32,
 };
 
 const logoDot = {
-  width: 18,
-  height: 18,
+  width: 20,
+  height: 20,
   borderRadius: "50%",
-  background:
-    "radial-gradient(circle at 30% 30%, #eab308, #22c55e 40%, #0ea5e9 80%)",
+  background: "#ffffff",
+  boxShadow: "0 0 16px rgba(255, 255, 255, 0.4)",
 };
 
 const logoText = {
   fontWeight: 700,
-  letterSpacing: 1,
-  fontSize: 14,
+  letterSpacing: "-0.5px",
+  fontSize: 18,
+  color: "#ffffff"
 };
 
 const logoTagline = {
-  color: "#777",
+  color: "#7c829e",
   fontWeight: 500,
-  letterSpacing: "0.5px",
-  fontSize: "12px",
+  letterSpacing: "0.05em",
+  fontSize: "11px",
   marginTop: "2px",
 };
 
@@ -342,50 +389,66 @@ const sidebarNav = {
 const sidebarUser = {
   display: "flex",
   alignItems: "center",
-  gap: 10,
+  gap: 12,
+  padding: "12px",
+  borderRadius: "12px",
+  background: "#1a1b26",
+  border: "1px solid #232533"
 };
 
 const avatarSmall = {
-  width: 32,
-  height: 32,
+  width: 36,
+  height: 36,
   borderRadius: "50%",
-  background: "#facc15",
+  background: "#ffffff",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  fontSize: 14,
+  fontSize: 16,
   fontWeight: 700,
-  color: "#111827",
+  color: "#0f1017",
 };
 
 const main = {
   flex: 1,
-  padding: 26,
+  padding: 32,
   display: "flex",
   flexDirection: "column",
-  gap: 18,
+  gap: 24,
+  overflowY: "auto",
 };
 
 const userMenu = {
   position: "absolute",
   right: 0,
-  bottom: 40,
-  background: "#111827",
+  bottom: 60,
+  background: "#12131c",
   borderRadius: 12,
-  border: "1px solid #4b5563",
-  padding: 6,
-  boxShadow: "0 10px 30px rgba(0,0,0,0.35)",
+  border: "1px solid #323546",
+  padding: 8,
+  boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
   zIndex: 10,
+  minWidth: "120px"
 };
 
 const userMenuItem = {
   border: "none",
   background: "transparent",
-  color: "#f9fafb",
-  fontSize: 12,
-  padding: "6px 10px",
+  color: "#ffffff",
+  fontSize: 14,
+  padding: "8px 12px",
   width: "100%",
   textAlign: "left",
   borderRadius: 8,
   cursor: "pointer",
+  fontWeight: 500
+};
+
+const emptyStateCard = {
+  padding: 32,
+  borderRadius: 16,
+  background: "#12131c",
+  color: "#ffffff",
+  border: "1px solid #232533",
+  boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
 };

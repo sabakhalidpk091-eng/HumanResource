@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+pyodbc
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+python-dotenv
+pytz
+openpyxl
+reportlab

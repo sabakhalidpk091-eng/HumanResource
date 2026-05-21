@@ -359,16 +359,17 @@ function ToggleRow({ label, description, checked, onChange, disabled }) {
   );
 }
 
-/* Styles (same as before) */
+/* Styles – Dark Theme */
 
-const wrapper = { maxWidth: 800, margin: "0 auto" };
+const wrapper = { maxWidth: 800, margin: "0 auto", minHeight: "100vh", padding: 24, background: "#0f1017" };
 
 const card = {
-  background: "rgba(248, 250, 252, 0.96)",
+  background: "#12131c",
   borderRadius: 24,
-  border: "1px solid #e5e7eb",
-  boxShadow: "0 10px 30px rgba(15, 23, 42, 0.12)",
+  border: "1px solid #232533",
+  boxShadow: "0 18px 48px rgba(0, 0, 0, 0.32)",
   padding: 22,
+  color: "#ffffff",
 };
 
 const headerRow = {
@@ -382,13 +383,14 @@ const title = {
   marginTop: 0,
   marginBottom: 4,
   fontSize: 20,
+  color: "#ffffff",
 };
 
 const subtitle = {
   marginTop: 0,
   marginBottom: 8,
   fontSize: 13,
-  color: "#6b7280",
+  color: "#7c829e",
 };
 
 const errorBox = {
@@ -396,8 +398,9 @@ const errorBox = {
   marginBottom: 8,
   padding: 8,
   borderRadius: 8,
-  background: "#fee2e2",
-  color: "#b91c1c",
+  background: "rgba(242, 109, 125, 0.1)",
+  border: "1px solid rgba(242, 109, 125, 0.3)",
+  color: "#f26d7d",
   fontSize: 12,
 };
 
@@ -407,19 +410,20 @@ const sectionTitle = {
   margin: "0 0 2px 0",
   fontSize: 14,
   fontWeight: 600,
+  color: "#ffffff",
 };
 
 const sectionHint = {
   margin: "0 0 10px 0",
   fontSize: 12,
-  color: "#6b7280",
+  color: "#7c829e",
 };
 
 const divider = {
   marginTop: 16,
   marginBottom: 8,
   height: 1,
-  background: "#e5e7eb",
+  background: "#232533",
 };
 
 const grid2 = {
@@ -436,17 +440,20 @@ const fieldCol = {
 
 const fieldLabel = {
   fontSize: 11,
-  color: "#374151",
+  color: "#7c829e",
+  fontWeight: 600,
 };
 
 const input = {
-  padding: 8,
-  borderRadius: 999,
-  border: "1px solid #d1d5db",
+  padding: "10px 14px",
+  borderRadius: 8,
+  border: "1px solid #323546",
   fontSize: 13,
-  background: "#ffffff",
-  color: "#111827",
+  background: "#1a1b26",
+  color: "#ffffff",
   outline: "none",
+  boxSizing: "border-box",
+  width: "100%",
 };
 
 const radioRow = {
@@ -462,15 +469,16 @@ const radioCard = {
   gap: 10,
   padding: 10,
   borderRadius: 16,
-  border: "1px solid #e5e7eb",
-  background: "#ffffff",
+  border: "1px solid #323546",
+  background: "#1a1b26",
+  color: "#ffffff",
 };
 
 const radioCircleOuter = {
   width: 18,
   height: 18,
   borderRadius: "999px",
-  border: "1px solid #9ca3af",
+  border: "1px solid #7c829e",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -481,18 +489,19 @@ const radioCircleInner = {
   width: 10,
   height: 10,
   borderRadius: "999px",
-  background: "#2563eb",
+  background: "#ffffff",
   transition: "opacity 0.15s ease-out",
 };
 
 const radioLabel = {
   fontSize: 13,
   fontWeight: 600,
+  color: "#ffffff",
 };
 
 const radioDescription = {
   fontSize: 11,
-  color: "#6b7280",
+  color: "#7c829e",
 };
 
 const toggleRow = {
@@ -505,14 +514,16 @@ const toggleRow = {
 const toggleLabel = {
   fontSize: 13,
   fontWeight: 500,
+  color: "#ffffff",
 };
 
 const toggleDescription = {
   fontSize: 11,
-  color: "#6b7280",
+  color: "#7c829e",
 };
 
 const toggleSwitch = {
+  "--accent": "#4f46e5",
   width: 38,
   height: 20,
   borderRadius: 999,
@@ -527,7 +538,7 @@ const toggleKnob = {
   height: 16,
   borderRadius: "50%",
   background: "#ffffff",
-  boxShadow: "0 1px 2px rgba(15,23,42,0.25)",
+  boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
 };
 
 const footerRow = {
@@ -538,22 +549,24 @@ const footerRow = {
 };
 
 const primaryButton = {
-  padding: "8px 16px",
-  borderRadius: 999,
+  padding: "10px 20px",
+  borderRadius: 8,
   border: "none",
-  background: "linear-gradient(135deg, #facc15, #22c55e, #0ea5e9)",
-  color: "#020617",
+  background: "#ffffff",
+  color: "#0f1017",
   fontWeight: 600,
   fontSize: 13,
   cursor: "pointer",
+  transition: "all 0.2s ease",
 };
 
 const secondaryButton = {
-  padding: "8px 14px",
-  borderRadius: 999,
-  border: "1px solid #d1d5db",
-  background: "#ffffff",
-  color: "#374151",
+  padding: "10px 16px",
+  borderRadius: 8,
+  border: "1px solid #323546",
+  background: "transparent",
+  color: "#ffffff",
   fontSize: 12,
   cursor: "pointer",
+  transition: "all 0.2s ease",
 };

@@ -533,164 +533,181 @@ function FilterField({ label, children }) {
 
 /* Styles: dark background, light cards, strong contrast */
 
+
+/* --- Applied Dark Theme --- */
 const pageBg = {
   minHeight: "100vh",
   padding: 24,
-  background:
-    "linear-gradient(135deg, #020617 0%, #020617 35%, #e5e7eb 100%)",
-  fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI'",
+  background: "#0f1017",
+  fontFamily: "'Inter', 'Outfit', sans-serif",
+  color: "#ffffff"
 };
 
 const pageInner = {
-  maxWidth: 1200,
+  maxWidth: 1400,
   margin: "0 auto",
   display: "flex",
   flexDirection: "column",
-  gap: 16,
+  gap: 20,
 };
 
 const headerRow = {
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
-  padding: "12px 16px",
-  borderRadius: 18,
-  background: "rgba(15,23,42,0.96)",
-  border: "1px solid rgba(148,163,184,0.5)",
+  padding: "16px 24px",
+  borderRadius: 16,
+  background: "#12131c",
+  border: "1px solid #232533",
 };
 
 const eyebrow = {
   fontSize: 11,
-  letterSpacing: 1.5,
-  textTransform: "uppercase",
-  color: "#e5e7eb",
+  color: "#7c829e",
+  letterSpacing: 1,
+  fontWeight: 600,
   marginBottom: 4,
 };
 
 const title = {
   margin: 0,
-  fontSize: 22,
-  color: "#f9fafb",
+  fontSize: 24,
+  color: "#ffffff",
+  letterSpacing: "-0.5px"
 };
 
 const badge = {
-  padding: "8px 12px",
-  borderRadius: 999,
-  background: "#f9fafb",
-  border: "1px solid #e5e7eb",
   display: "flex",
   flexDirection: "column",
+  textAlign: "right"
 };
 
 const glassCard = {
-  background: "rgba(248, 250, 252, 0.96)",
-  borderRadius: 24,
-  border: "1px solid #e5e7eb",
-  boxShadow: "0 10px 30px rgba(15, 23, 42, 0.12)",
-};
-
-const filterCard = {
-  ...glassCard,
-  padding: 16,
-};
-
-const filterGrid = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
-  gap: 12,
-  marginBottom: 10,
-};
-
-const filterButtonsRow = {
-  display: "flex",
-  gap: 8,
-  justifyContent: "flex-end",
+  background: "#12131c",
+  borderRadius: 16,
+  border: "1px solid #232533",
+  boxShadow: "0 10px 30px rgba(0,0,0,0.2)"
 };
 
 const formCard = {
   ...glassCard,
-  padding: 18,
-  color: "#111827",
+  padding: 24,
+  color: "#ffffff",
+};
+
+const tableCard = {
+  ...glassCard,
+  padding: 24,
+  color: "#ffffff",
 };
 
 const formHeaderRow = {
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
-  marginBottom: 12,
+  marginBottom: 20,
 };
 
 const formTitle = {
   margin: 0,
-  fontSize: 16,
+  fontSize: 18,
+  fontWeight: 600,
+  letterSpacing: "-0.3px",
+  color: "#ffffff"
 };
 
 const formSubtitle = {
   margin: 0,
-  fontSize: 12,
-  color: "#6b7280",
+  fontSize: 13,
+  marginTop: 4,
+  color: "#7c829e",
 };
 
 const formGrid = {
   display: "grid",
   gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
-  gap: 12,
+  gap: 16,
   marginTop: 10,
 };
 
 const fieldCol = {
   display: "flex",
   flexDirection: "column",
-  gap: 4,
+  gap: 8,
 };
 
 const fieldLabel = {
   fontSize: 11,
-  color: "#374151",
+  color: "#7c829e",
+  fontWeight: 600,
+  letterSpacing: "0.05em"
 };
 
 const input = {
-  padding: 8,
-  borderRadius: 999,
-  border: "1px solid #d1d5db",
-  fontSize: 13,
-  background: "#ffffff",
-  color: "#111827",
+  padding: "12px 14px",
+  borderRadius: 8,
+  border: "1px solid #323546",
+  fontSize: 14,
+  background: "#1a1b26",
+  color: "#ffffff",
   outline: "none",
+  boxSizing: "border-box",
+  transition: "all 0.2s ease",
+  width: "100%"
 };
 
 const formFooterRow = {
-  marginTop: 14,
+  marginTop: 24,
   display: "flex",
   justifyContent: "flex-end",
-  gap: 8,
+  gap: 12,
 };
 
 const primaryButton = {
-  padding: "8px 16px",
-  borderRadius: 999,
+  padding: "12px 24px",
+  borderRadius: 8,
   border: "none",
-  background:
-    "linear-gradient(135deg, #facc15, #22c55e, #0ea5e9)",
-  color: "#020617",
+  background: "#ffffff",
+  color: "#0f1017",
   fontWeight: 600,
-  fontSize: 13,
+  fontSize: 14,
   cursor: "pointer",
+  transition: "all 0.2s ease"
 };
 
 const ghostButton = {
-  padding: "8px 14px",
-  borderRadius: 999,
-  border: "1px solid #d1d5db",
-  background: "#ffffff",
-  color: "#374151",
-  fontSize: 12,
+  padding: "12px 24px",
+  borderRadius: 8,
+  border: "1px solid #323546",
+  background: "transparent",
+  color: "#ffffff",
+  fontSize: 14,
+  fontWeight: 600,
   cursor: "pointer",
+  transition: "all 0.2s ease"
 };
 
-const tableCard = {
-  ...glassCard,
-  padding: 16,
+const outlineButton = {
+  padding: "6px 12px",
+  borderRadius: 6,
+  border: "1px solid #6b5ce7",
+  background: "transparent",
+  color: "#a29bfe",
+  fontSize: 12,
+  fontWeight: 500,
+  cursor: "pointer",
+  marginRight: 8,
+};
+
+const dangerButton = {
+  padding: "6px 12px",
+  borderRadius: 6,
+  border: "1px solid #f26d7d",
+  background: "transparent",
+  color: "#ffbec8",
+  fontSize: 12,
+  fontWeight: 500,
+  cursor: "pointer",
 };
 
 const tableScroller = {
@@ -706,73 +723,85 @@ const table = {
 
 const th = {
   textAlign: "left",
-  padding: "8px 6px",
-  borderBottom: "1px solid #e5e7eb",
-  color: "#6b7280",
-  fontWeight: 500,
+  padding: "12px 8px",
+  borderBottom: "1px solid #232533",
+  color: "#7c829e",
+  fontWeight: 600,
 };
 
 const td = {
-  padding: "8px 6px",
-  borderBottom: "1px solid #e5e7eb",
-  color: "#111827",
+  padding: "12px 8px",
+  borderBottom: "1px solid #232533",
+  color: "#ffffff",
+  verticalAlign: "middle"
 };
 
-const outlineButton = {
-  padding: "4px 10px",
-  borderRadius: 999,
-  border: "1px solid #2563eb",
-  background: "#ffffff",
-  color: "#2563eb",
-  fontSize: 11,
-  cursor: "pointer",
-  marginRight: 6,
+const infoText = { fontSize: 14, color: "#7c829e" };
+const errorBox = {
+  marginTop: 8,
+  marginBottom: 8,
+  padding: 12,
+  borderRadius: 8,
+  background: "rgba(242, 109, 125, 0.1)",
+  border: "1px solid rgba(242, 109, 125, 0.3)",
+  color: "#f26d7d",
+  fontSize: 13,
 };
 
-const dangerButton = {
-  padding: "4px 10px",
-  borderRadius: 999,
-  border: "1px solid #b91c1c",
-  background: "#ffffff",
-  color: "#b91c1c",
-  fontSize: 11,
-  cursor: "pointer",
+const paginationRow = {
+  marginTop: 20,
+  display: "flex",
+  alignItems: "center",
+  gap: 16,
+  justifyContent: "flex-end",
 };
 
-const priorityPill = (priority) => ({
-  padding: "2px 8px",
-  borderRadius: 999,
-  fontSize: 11,
-  background:
-    priority === "high"
-      ? "rgba(239,68,68,0.15)"
-      : priority === "medium"
-      ? "rgba(234,179,8,0.15)"
-      : "rgba(34,197,94,0.12)",
-  color:
-    priority === "high"
-      ? "#991b1b"
-      : priority === "medium"
-      ? "#92400e"
-      : "#166534",
-  textTransform: "capitalize",
+const pageBtn = (disabled) => ({
+  padding: "8px 16px",
+  borderRadius: 8,
+  border: "1px solid #323546",
+  background: disabled ? "transparent" : "#1a1b26",
+  color: disabled ? "#585c78" : "#ffffff",
+  cursor: disabled ? "not-allowed" : "pointer",
+  fontSize: 13,
+  fontWeight: 500
 });
 
-const statusPill = (status) => ({
-  padding: "2px 8px",
-  borderRadius: 999,
-  fontSize: 11,
-  background:
-    status === "done"
-      ? "rgba(34,197,94,0.12)"
-      : status === "in_progress"
-      ? "rgba(59,130,246,0.12)"
-      : "rgba(148,163,184,0.25)",
-  color:
-    status === "done"
-      ? "#166534"
-      : status === "in_progress"
-      ? "#1d4ed8"
-      : "#4b5563",
-  textTransform: "capitalize",
-});
+const statusPill = (status) => {
+  let bg = "rgba(124, 108, 247, 0.1)";
+  let color = "#a29bfe";
+  const s = String(status).toLowerCase();
+  
+  if (s.includes("active") || s.includes("hired") || s.includes("approved") || s.includes("present") || s.includes("done")) {
+    bg = "rgba(16, 185, 129, 0.1)";
+    color = "#10b981";
+  } else if (s.includes("inactive") || s.includes("rejected") || s.includes("absent") || s.includes("overdue")) {
+    bg = "rgba(242, 109, 125, 0.1)";
+    color = "#f26d7d";
+  } else if (s.includes("leave") || s.includes("pending") || s.includes("hold") || s.includes("progress")) {
+    bg = "rgba(234, 179, 8, 0.1)";
+    color = "#facc15";
+  }
+  
+  return {
+    padding: "4px 10px",
+    borderRadius: 999,
+    fontSize: 11,
+    fontWeight: 600,
+    background: bg,
+    color: color,
+    textTransform: "capitalize",
+  };
+};
+
+/* --- Custom specifics omitted and merged --- */
+
+const filterCard = formCard;
+const filterGrid = formGrid;
+const filterButtonsRow = { display: "flex", gap: 12, marginTop: 16 };
+const priorityPill = (p) => { 
+  let bg = "rgba(124, 108, 247, 0.1)"; let color = "#a29bfe"; 
+  if (p==="High") { bg = "rgba(242, 109, 125, 0.1)"; color = "#f26d7d"; } 
+  else if (p==="Medium") { bg = "rgba(234, 179, 8, 0.1)"; color = "#facc15"; } 
+  return { padding: "4px 10px", borderRadius: 999, fontSize: 11, fontWeight: 600, background: bg, color: color }; 
+};

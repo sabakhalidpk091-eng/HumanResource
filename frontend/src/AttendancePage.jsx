@@ -103,9 +103,9 @@ const AttendancePage = () => {
   // guard AFTER hooks
   if (!isAdminView) {
     return (
-      <div style={{ padding: 24 }}>
+      <div style={{ padding: 24, minHeight: "100vh", background: "#0f1017", color: "#ffffff" }}>
         <h2>Attendance (Admin)</h2>
-        <p style={{ marginTop: 8, fontSize: 13 }}>
+        <p style={{ marginTop: 8, fontSize: 13, color: "#7c829e" }}>
           You do not have permission to view all employees&apos; attendance.
           Please use the <b>Mark attendance</b> page for your own records.
         </p>
@@ -114,7 +114,7 @@ const AttendancePage = () => {
   }
 
   return (
-    <div style={{ padding: 24 }}>
+    <div style={{ padding: 24, minHeight: "100vh", background: "#0f1017", color: "#ffffff" }}>
       <div
         style={{
           display: "flex",
@@ -141,7 +141,7 @@ const AttendancePage = () => {
       >
         <div>
           <label
-            style={{ display: "block", fontSize: 12, marginBottom: 4 }}
+            style={{ display: "block", fontSize: 12, marginBottom: 4, color: "#7c829e", fontWeight: 600 }}
           >
             From
           </label>
@@ -150,17 +150,20 @@ const AttendancePage = () => {
             value={fromDate}
             onChange={(e) => setFromDate(e.target.value)}
             style={{
-              border: "1px solid #d1d5db",
+              border: "1px solid #323546",
               borderRadius: 4,
-              padding: "4px 8px",
+              padding: "6px 8px",
               fontSize: 12,
+              background: "#1a1b26",
+              color: "#ffffff",
+              outline: "none"
             }}
           />
         </div>
 
         <div>
           <label
-            style={{ display: "block", fontSize: 12, marginBottom: 4 }}
+            style={{ display: "block", fontSize: 12, marginBottom: 4, color: "#7c829e", fontWeight: 600 }}
           >
             To
           </label>
@@ -169,17 +172,20 @@ const AttendancePage = () => {
             value={toDate}
             onChange={(e) => setToDate(e.target.value)}
             style={{
-              border: "1px solid #d1d5db",
+              border: "1px solid #323546",
               borderRadius: 4,
-              padding: "4px 8px",
+              padding: "6px 8px",
               fontSize: 12,
+              background: "#1a1b26",
+              color: "#ffffff",
+              outline: "none"
             }}
           />
         </div>
 
         <div>
           <label
-            style={{ display: "block", fontSize: 12, marginBottom: 4 }}
+            style={{ display: "block", fontSize: 12, marginBottom: 4, color: "#7c829e", fontWeight: 600 }}
           >
             Employee
           </label>
@@ -187,11 +193,14 @@ const AttendancePage = () => {
             value={employeeId}
             onChange={(e) => setEmployeeId(e.target.value)}
             style={{
-              border: "1px solid #d1d5db",
+              border: "1px solid #323546",
               borderRadius: 4,
-              padding: "4px 8px",
+              padding: "6px 8px",
               fontSize: 12,
               minWidth: 180,
+              background: "#1a1b26",
+              color: "#ffffff",
+              outline: "none"
             }}
           >
             <option value="">All</option>
@@ -207,13 +216,14 @@ const AttendancePage = () => {
           type="submit"
           disabled={loading}
           style={{
-            background: "#2563eb",
-            color: "#fff",
+            background: "#ffffff",
+            color: "#0f1017",
             borderRadius: 4,
             border: "none",
-            padding: "6px 14px",
-            fontSize: 12,
+            padding: "8px 16px",
+            fontSize: 13,
             cursor: "pointer",
+            fontWeight: 600
           }}
         >
           {loading ? "Loading..." : "Apply"}
@@ -230,18 +240,19 @@ const AttendancePage = () => {
       <div
         style={{
           overflowX: "auto",
-          borderRadius: 6,
-          border: "1px solid #e5e7eb",
+          borderRadius: 16,
+          border: "1px solid #232533",
+          background: "#12131c"
         }}
       >
         <table
           style={{
             width: "100%",
             borderCollapse: "collapse",
-            fontSize: 12,
+            fontSize: 13,
           }}
         >
-          <thead style={{ background: "#f3f4f6" }}>
+          <thead style={{ background: "rgba(26, 27, 38, 0.5)" }}>
             <tr>
               <th style={th}>Date</th>
               <th style={th}>Employee</th>
@@ -261,9 +272,9 @@ const AttendancePage = () => {
                 <td
                   colSpan={10}
                   style={{
-                    padding: "10px 12px",
+                    padding: "16px 12px",
                     textAlign: "center",
-                    color: "#6b7280",
+                    color: "#7c829e",
                   }}
                 >
                   No attendance records.
@@ -271,7 +282,7 @@ const AttendancePage = () => {
               </tr>
             )}
             {records.map((rec) => (
-              <tr key={rec.id} style={{ background: "#ffffff" }}>
+              <tr key={rec.id} style={{ background: "#12131c" }}>
                 <td style={td}>{formatDate(rec.date)}</td>
                 <td style={td}>{rec.employee?.name || "-"}</td>
                 <td style={td}>{deriveStatus(rec)}</td>
@@ -297,16 +308,16 @@ const AttendancePage = () => {
 
 const th = {
   textAlign: "left",
-  padding: "8px 10px",
-  borderBottom: "1px solid #e5e7eb",
-  fontWeight: 500,
-  color: "#374151",
+  padding: "12px 10px",
+  borderBottom: "1px solid #232533",
+  fontWeight: 600,
+  color: "#7c829e",
 };
 
 const td = {
-  padding: "8px 10px",
-  borderBottom: "1px solid #f3f4f6",
-  color: "#111827",
+  padding: "12px 10px",
+  borderBottom: "1px solid #232533",
+  color: "#ffffff",
 };
 
 export default AttendancePage;

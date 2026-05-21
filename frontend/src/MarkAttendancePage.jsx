@@ -100,7 +100,7 @@ export default function MarkAttendancePage() {
   };
 
   return (
-    <div style={{ padding: 24 }}>
+    <div style={{ padding: 24, minHeight: "100vh", background: "#0f1017", color: "#ffffff" }}>
       {/* FORM */}
       <div
         style={{
@@ -108,8 +108,8 @@ export default function MarkAttendancePage() {
           margin: "0 auto 24px",
           padding: 24,
           borderRadius: 12,
-          border: "1px solid #e5e7eb",
-          background: "#ffffff",
+          border: "1px solid #232533",
+          background: "#12131c",
         }}
       >
         <h2
@@ -272,15 +272,15 @@ export default function MarkAttendancePage() {
           maxWidth: 950,
           margin: "0 auto",
           borderRadius: 12,
-          border: "1px solid #e5e7eb",
-          background: "#ffffff",
+          border: "1px solid #232533",
+          background: "#12131c",
           overflowX: "auto",
         }}
       >
         <div
           style={{
             padding: "12px 16px",
-            borderBottom: "1px solid #e5e7eb",
+            borderBottom: "1px solid #232533",
             fontWeight: 600,
           }}
         >
@@ -300,7 +300,7 @@ export default function MarkAttendancePage() {
             fontSize: 12,
           }}
         >
-          <thead style={{ background: "#f3f4f6" }}>
+          <thead style={{ background: "rgba(26, 27, 38, 0.5)" }}>
             <tr>
               <th style={th}>Date</th>
               <th style={th}>Status</th>
@@ -318,7 +318,7 @@ export default function MarkAttendancePage() {
                   style={{
                     padding: "10px 12px",
                     textAlign: "center",
-                    color: "#6b7280",
+                    color: "#7c829e",
                   }}
                 >
                   No attendance records.
@@ -348,39 +348,46 @@ export default function MarkAttendancePage() {
 
 const input = {
   width: "100%",
-  border: "1px solid #d1d5db",
-  borderRadius: 6,
-  padding: "8px 10px",
-  fontSize: 13,
+  border: "1px solid #323546",
+  borderRadius: 8,
+  padding: "12px 14px",
+  fontSize: 14,
+  background: "#1a1b26",
+  color: "#ffffff",
+  outline: "none",
+  boxSizing: "border-box",
+  transition: "all 0.2s ease"
 };
 
 const hint = {
   fontSize: 11,
-  color: "#9ca3af",
-  marginTop: 4,
+  color: "#7c829e",
+  marginTop: 6,
 };
 
 const submitButton = {
-  background: "#16a34a",
-  color: "#fff",
-  borderRadius: 6,
+  background: "#ffffff",
+  color: "#0f1017",
+  borderRadius: 8,
   border: "none",
-  padding: "10px 32px",
+  padding: "12px 32px",
   fontSize: 14,
-  fontWeight: 500,
+  fontWeight: 600,
   cursor: "pointer",
+  transition: "all 0.2s ease"
 };
 
 const th = {
   textAlign: "left",
-  padding: "8px 10px",
-  borderBottom: "1px solid #e5e7eb",
-  fontWeight: 500,
-  color: "#374151",
+  padding: "12px 10px",
+  borderBottom: "1px solid #232533",
+  fontWeight: 600,
+  color: "#7c829e",
 };
 
 const td = {
-  padding: "8px 10px",
-  borderBottom: "1px solid #f3f4f6",
-  color: "#111827",
+  padding: "12px 10px",
+  borderBottom: "1px solid #232533",
+  color: "#ffffff",
+  verticalAlign: "middle"
 };

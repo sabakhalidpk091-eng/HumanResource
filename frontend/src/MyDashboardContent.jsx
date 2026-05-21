@@ -67,12 +67,12 @@ export default function MyDashboardContent(props) {
       : 0;
 
   const rawWorkFormat = employee.workFormat || "Office";
-  const normalizedWorkFormat =
-    rawWorkFormat === "Office" ||
-    rawWorkFormat === "Hybrid" ||
-    rawWorkFormat === "Remote"
-      ? rawWorkFormat
-      : "Office";
+  const normalizedWorkFormat = (() => {
+    const value = String(rawWorkFormat).toUpperCase();
+    if (value === "HYBRID") return "Hybrid";
+    if (value === "REMOTE") return "Remote";
+    return "Office";
+  })();
 
   const office = normalizedWorkFormat === "Office" ? 1 : 0;
   const hybrid = normalizedWorkFormat === "Hybrid" ? 1 : 0;
@@ -129,8 +129,16 @@ export default function MyDashboardContent(props) {
             type="button"
             style={iconButton}
             onClick={() => setSearchOpen((prev) => !prev)}
+            title="Search onboarding"
           >
             🔍
+          </button>
+          <button
+            type="button"
+            style={premiumButton}
+            onClick={() => window.print()}
+          >
+            Download Slip
           </button>
         </div>
       </div>
@@ -189,7 +197,7 @@ export default function MyDashboardContent(props) {
                       style={{
                         fontSize: 13,
                         fontWeight: 600,
-                        fill: "#111827",
+                        fill: "#ffffff",
                       }}
                     />
                   </Pie>
@@ -246,7 +254,7 @@ export default function MyDashboardContent(props) {
       <div style={scheduleCard}>
         <div style={scheduleHeader}>
           <span style={scheduleTitle}>
-            This week – {monthName} {year}
+            This week - {monthName} {year}
           </span>
         </div>
 
@@ -393,6 +401,72 @@ export default function MyDashboardContent(props) {
           delta={`Absent: ${absentDays}, Leave: ${leaveDays}`}
         />
       </div>
+
+      {/* HIDDEN PRINTABLE SALARY SLIP */}
+      <div className="printable-slip" style={printOnly}>
+        <div style={slipContainer}>
+          <div style={slipHeader}>
+            <h2 style={{ margin: 0 }}>PAYSLIP - {monthName.toUpperCase()} {year}</h2>
+            <p style={{ margin: "4px 0" }}>FlowNest HRM System</p>
+          </div>
+          <hr />
+          <div style={slipGrid}>
+            <div>
+              <strong>Employee Name:</strong> {displayName}<br />
+              <strong>Employee Code:</strong> {employee.employeeCode || "N/A"}<br />
+              <strong>CNIC:</strong> {employee.cnic || "N/A"}
+            </div>
+            <div>
+              <strong>Department:</strong> {employee.department || "N/A"}<br />
+              <strong>Designation:</strong> {designation}<br />
+              <strong>Joining Date:</strong> {employee.joiningDate?.slice(0,10)}
+            </div>
+          </div>
+          <hr />
+          <table style={slipTable}>
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th style={{ textAlign: "right" }}>Amount (PKR)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Basic Salary</td>
+                <td style={{ textAlign: "right" }}>{employee.baseSalary?.toLocaleString() || "0"}</td>
+              </tr>
+              <tr>
+                <td>Allowance</td>
+                <td style={{ textAlign: "right" }}>{employee.allowance?.toLocaleString() || "0"}</td>
+              </tr>
+              <tr style={{ fontWeight: "bold" }}>
+                <td>Gross Salary</td>
+                <td style={{ textAlign: "right" }}>
+                  {((employee.baseSalary || 0) + (employee.allowance || 0)).toLocaleString()}
+                </td>
+              </tr>
+              <tr>
+                <td>Absence Deductions ({absentDays} days)</td>
+                <td style={{ textAlign: "right", color: "red" }}>
+                   - {Math.round((employee.baseSalary / 30) * absentDays).toLocaleString()}
+                </td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr style={{ fontSize: 18, fontWeight: "bold", borderTop: "2px solid #000" }}>
+                <td>NET PAYABLE</td>
+                <td style={{ textAlign: "right" }}>
+                  {Math.max(0, Math.round(((employee.baseSalary || 0) + (employee.allowance || 0)) - ((employee.baseSalary / 30) * absentDays))).toLocaleString()}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+          <div style={{ marginTop: 40, display: "flex", justifyContent: "space-between" }}>
+            <div style={{ borderTop: "1px solid #000", width: 150, textAlign: "center" }}>Employee Signature</div>
+            <div style={{ borderTop: "1px solid #000", width: 150, textAlign: "center" }}>Manager Signature</div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -412,7 +486,7 @@ function formatTaskDateTime(value) {
     hour: "2-digit",
     minute: "2-digit",
   });
-  return `${day} · ${time}`;
+  return `${day} - ${time}`;
 }
 
 function toMidnight(d) {
@@ -524,13 +598,13 @@ const topRow = {
 const headline = {
   margin: 0,
   fontSize: 24,
-  color: "#f9fafb",
+  color: "#ffffff",
 };
 
 const subline = {
   margin: "4px 0 0 0",
   fontSize: 13,
-  color: "#cbd5f5",
+  color: "#7c829e",
 };
 
 const topActions = {
@@ -543,7 +617,22 @@ const iconButton = {
   height: 32,
   borderRadius: 999,
   border: "none",
-  background: "rgba(243, 244, 246, 0.9)",
+  background: "#1a1b26",
+  color: "#ffffff",
+  cursor: "pointer",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+};
+
+const premiumButton = {
+  padding: "8px 16px",
+  borderRadius: 999,
+  border: "none",
+  background: "#ffffff",
+  color: "#0f1017",
+  fontWeight: 600,
+  fontSize: 13,
   cursor: "pointer",
 };
 
@@ -551,7 +640,9 @@ const searchInput = {
   width: 260,
   padding: "7px 12px",
   borderRadius: 999,
-  border: "1px solid #d1d5db",
+  border: "1px solid #323546",
+  background: "#1a1b26",
+  color: "#ffffff",
   fontSize: 13,
 };
 
@@ -565,10 +656,10 @@ const firstRowGrid = {
 };
 
 const glassCard = {
-  background: "rgba(248, 250, 252, 0.9)",
+  background: "#12131c",
   borderRadius: 22,
-  border: "1px solid rgba(148, 163, 184, 0.4)",
-  boxShadow: "0 16px 40px rgba(15, 23, 42, 0.26)",
+  border: "1px solid #232533",
+  boxShadow: "0 10px 30px rgba(0, 0, 0, 0.2)",
 };
 
 /* profile */
@@ -585,11 +676,11 @@ const avatarLarge = {
   width: 70,
   height: 70,
   borderRadius: 24,
-  background: "linear-gradient(135deg, #1f2937, #4b5563)",
+  background: "#1a1b26",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  color: "#f9fafb",
+  color: "#ffffff",
   fontSize: 28,
   fontWeight: 700,
 };
@@ -598,17 +689,18 @@ const profileName = {
   fontSize: 18,
   fontWeight: 700,
   marginBottom: 2,
+  color: "#ffffff"
 };
 
 const profileRole = {
   fontSize: 13,
-  color: "#6b7280",
+  color: "#7c829e",
   marginBottom: 4,
 };
 
 const profileMeta = {
   fontSize: 11,
-  color: "#9ca3af",
+  color: "#585c78",
 };
 
 /* donut */
@@ -630,6 +722,7 @@ const cardHeaderRow = {
 const cardTitle = {
   fontSize: 14,
   fontWeight: 600,
+  color: "#ffffff"
 };
 
 const donutInnerRow = {
@@ -655,8 +748,8 @@ const onboardingCard = {
 const completionPill = {
   borderRadius: 999,
   padding: "3px 10px",
-  background: "rgba(22, 163, 74, 0.08)",
-  color: "#16a34a",
+  background: "rgba(16, 185, 129, 0.1)",
+  color: "#10b981",
   fontSize: 11,
   fontWeight: 600,
 };
@@ -665,14 +758,14 @@ const progressTrack = {
   width: "100%",
   height: 4,
   borderRadius: 999,
-  background: "#e5e7eb",
+  background: "#232533",
   overflow: "hidden",
   marginTop: 2,
 };
 
 const progressBar = {
   height: "100%",
-  background: "#22c55e",
+  background: "#10b981",
 };
 
 const scrollColumn = {
@@ -683,7 +776,7 @@ const scrollColumn = {
 
 const emptyText = {
   fontSize: 12,
-  color: "#6b7280",
+  color: "#7c829e",
 };
 
 /* onboarding item */
@@ -700,7 +793,7 @@ const taskThumb = {
   width: 34,
   height: 34,
   borderRadius: 12,
-  background: "linear-gradient(135deg, #e5e7eb, #d1d5db)",
+  background: "#1a1b26",
   marginRight: 10,
 };
 
@@ -708,21 +801,20 @@ const taskTitle = {
   fontSize: 13,
   fontWeight: 500,
   marginBottom: 1,
+  color: "#ffffff"
 };
 
 const taskSubtitle = {
   fontSize: 11,
-  color: "#6b7280",
+  color: "#7c829e",
 };
 
 const taskStatusIcon = (status) => ({
   width: 14,
   height: 14,
   borderRadius: "50%",
-  border: status === "done" ? "none" : "1px solid #d1d5db",
-  background: status === "done" ? "#16a34a" : "transparent",
-  boxShadow:
-    status === "done" ? "0 0 0 2px rgba(22,163,74,0.25)" : "none",
+  border: status === "done" ? "none" : "1px solid #323546",
+  background: status === "done" ? "#10b981" : "transparent",
 });
 
 /* schedule */
@@ -744,6 +836,7 @@ const scheduleHeader = {
 const scheduleTitle = {
   fontSize: 14,
   fontWeight: 600,
+  color: "#ffffff"
 };
 
 const scheduleTimelineOuter = {
@@ -763,7 +856,8 @@ const scheduleDay = {
   minWidth: 120,
   padding: 8,
   borderRadius: 16,
-  background: "rgba(249, 250, 251, 0.95)",
+  background: "#1a1b26",
+  border: "1px solid #232533",
   display: "flex",
   flexDirection: "column",
   gap: 6,
@@ -771,7 +865,7 @@ const scheduleDay = {
 
 const scheduleDayLabel = {
   fontSize: 11,
-  color: "#111827",
+  color: "#ffffff",
 };
 
 const scheduleEventsColumn = {
@@ -782,18 +876,15 @@ const scheduleEventsColumn = {
 
 const emptyDayText = {
   fontSize: 11,
-  color: "#111827",
+  color: "#585c78",
 };
 
 const scheduleEventChip = (kind) => ({
   fontSize: 11,
   padding: "3px 8px",
   borderRadius: 999,
-  background:
-    kind === "leave"
-      ? "rgba(34,197,94,0.12)"
-      : "rgba(37, 99, 235, 0.08)",
-  color: kind === "leave" ? "#15803d" : "#1d4ed8",
+  background: kind === "leave" ? "rgba(16, 185, 129, 0.1)" : "rgba(124, 108, 247, 0.1)",
+  color: kind === "leave" ? "#10b981" : "#a29bfe",
 });
 
 /* weekly productivity strip */
@@ -825,13 +916,13 @@ const weeklyBar = {
 
 const weeklyBarCount = {
   fontSize: 10,
-  color: "#f9fafb",
+  color: "#ffffff",
   marginBottom: 2,
 };
 
 const weeklyBarLabel = {
   fontSize: 10,
-  color: "#4b5563",
+  color: "#7c829e",
 };
 
 /* bottom stats */
@@ -851,15 +942,49 @@ const statBig = {
   fontSize: 22,
   fontWeight: 700,
   marginBottom: 4,
+  color: "#ffffff"
 };
 
 const statLabel = {
   fontSize: 12,
-  color: "#4b5563",
+  color: "#7c829e",
   marginBottom: 3,
 };
 
 const statDelta = {
   fontSize: 11,
-  color: "#16a34a",
+  color: "#10b981",
+};
+
+/* SALARY SLIP PRINT STYLES */
+
+const printOnly = {
+  display: "none",
+};
+
+const slipContainer = {
+  padding: "40px",
+  fontFamily: "'Courier New', Courier, monospace",
+  color: "#000",
+  background: "#fff",
+  border: "1px solid #eee",
+};
+
+const slipHeader = {
+  textAlign: "center",
+  marginBottom: "30px",
+};
+
+const slipGrid = {
+  display: "grid",
+  gridTemplateColumns: "1fr 1fr",
+  gap: "30px",
+  fontSize: "14px",
+  marginBottom: "30px",
+};
+
+const slipTable = {
+  width: "100%",
+  borderCollapse: "collapse",
+  marginTop: "20px",
 };
