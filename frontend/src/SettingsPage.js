@@ -1,8 +1,10 @@
 // SettingsPage.jsx
 import React, { useEffect, useState } from "react";
 import api from "./api";
+import { useAuth } from "./AuthContext";
 
 export default function SettingsPage() {
+  const { updateUser } = useAuth();
   const [name, setName] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [timeZone, setTimeZone] = useState("Asia/Karachi");
@@ -32,6 +34,7 @@ export default function SettingsPage() {
         setJobTitle(s.jobTitle || "");
         setTimeZone(s.timeZone || "Asia/Karachi");
         setTheme(s.theme || "system");
+        applyTheme(s.theme || "system");
         setEmailUpdates(Boolean(s.emailUpdates ?? true));
         setTaskReminders(Boolean(s.taskReminders ?? true));
         setSecurityAlerts(Boolean(s.securityAlerts ?? true));
@@ -65,7 +68,8 @@ export default function SettingsPage() {
         taskReminders,
         securityAlerts,
       };
-      await api.put("/me/settings", payload);
+      const res = await api.put("/me/settings", payload);
+      updateUser(res.data.user);
 
       // update snapshot to these saved values
       setInitialSettings(payload);
@@ -88,6 +92,7 @@ export default function SettingsPage() {
     setJobTitle(initialSettings.jobTitle || "");
     setTimeZone(initialSettings.timeZone || "Asia/Karachi");
     setTheme(initialSettings.theme || "system");
+    applyTheme(initialSettings.theme || "system");
     setEmailUpdates(Boolean(initialSettings.emailUpdates ?? true));
     setTaskReminders(Boolean(initialSettings.taskReminders ?? true));
     setSecurityAlerts(Boolean(initialSettings.securityAlerts ?? true));
@@ -135,7 +140,7 @@ export default function SettingsPage() {
           <section style={section}>
             <h3 style={sectionTitle}>Profile</h3>
             <p style={sectionHint}>
-              Basic information that will be visible across FlowNest.
+              Basic information that will be visible across ByteHRm.
             </p>
             <div style={grid2}>
               <Field
@@ -175,7 +180,7 @@ export default function SettingsPage() {
           <section style={section}>
             <h3 style={sectionTitle}>Appearance</h3>
             <p style={sectionHint}>
-              Choose how FlowNest looks on your device.
+              Choose how ByteHRm looks on your device.
             </p>
             <div style={radioRow}>
               <RadioCard
@@ -183,7 +188,10 @@ export default function SettingsPage() {
                 description="Match your OS preference."
                 value="system"
                 current={theme}
-                onChange={setTheme}
+                onChange={(value) => {
+                  setTheme(value);
+                  applyTheme(value);
+                }}
                 disabled={loading || saving}
               />
               <RadioCard
@@ -191,7 +199,10 @@ export default function SettingsPage() {
                 description="Light background with dark text."
                 value="light"
                 current={theme}
-                onChange={setTheme}
+                onChange={(value) => {
+                  setTheme(value);
+                  applyTheme(value);
+                }}
                 disabled={loading || saving}
               />
               <RadioCard
@@ -199,7 +210,10 @@ export default function SettingsPage() {
                 description="Best for low‑light environments."
                 value="dark"
                 current={theme}
-                onChange={setTheme}
+                onChange={(value) => {
+                  setTheme(value);
+                  applyTheme(value);
+                }}
                 disabled={loading || saving}
               />
             </div>
@@ -211,7 +225,7 @@ export default function SettingsPage() {
           <section style={section}>
             <h3 style={sectionTitle}>Notifications</h3>
             <p style={sectionHint}>
-              Decide when FlowNest should send you updates.
+              Decide when ByteHRm should send you updates.
             </p>
             <ToggleRow
               label="Email updates"
@@ -359,17 +373,30 @@ function ToggleRow({ label, description, checked, onChange, disabled }) {
   );
 }
 
-/* Styles – Dark Theme */
+function resolveTheme(theme) {
+  if (theme === "light" || theme === "dark") {
+    return theme;
+  }
+  return window.matchMedia("(prefers-color-scheme: light)").matches
+    ? "light"
+    : "dark";
+}
 
-const wrapper = { maxWidth: 800, margin: "0 auto", minHeight: "100vh", padding: 24, background: "#0f1017" };
+function applyTheme(theme) {
+  if (typeof window !== "undefined") {
+    document.documentElement.dataset.theme = resolveTheme(theme);
+  }
+}
+
+const wrapper = { maxWidth: 800, margin: "0 auto", minHeight: "100vh", padding: 24, background: "var(--bg-shell)" };
 
 const card = {
-  background: "#12131c",
+  background: "var(--bg-surface)",
   borderRadius: 24,
-  border: "1px solid #232533",
-  boxShadow: "0 18px 48px rgba(0, 0, 0, 0.32)",
+  border: "1px solid var(--glass-border)",
+  boxShadow: "var(--glass-shadow)",
   padding: 22,
-  color: "#ffffff",
+  color: "var(--text-main)",
 };
 
 const headerRow = {
@@ -383,14 +410,14 @@ const title = {
   marginTop: 0,
   marginBottom: 4,
   fontSize: 20,
-  color: "#ffffff",
+  color: "var(--text-main)",
 };
 
 const subtitle = {
   marginTop: 0,
   marginBottom: 8,
   fontSize: 13,
-  color: "#7c829e",
+  color: "var(--text-muted)",
 };
 
 const errorBox = {
@@ -410,20 +437,20 @@ const sectionTitle = {
   margin: "0 0 2px 0",
   fontSize: 14,
   fontWeight: 600,
-  color: "#ffffff",
+  color: "var(--text-main)",
 };
 
 const sectionHint = {
   margin: "0 0 10px 0",
   fontSize: 12,
-  color: "#7c829e",
+  color: "var(--text-muted)",
 };
 
 const divider = {
   marginTop: 16,
   marginBottom: 8,
   height: 1,
-  background: "#232533",
+  background: "var(--glass-border)",
 };
 
 const grid2 = {
@@ -440,17 +467,17 @@ const fieldCol = {
 
 const fieldLabel = {
   fontSize: 11,
-  color: "#7c829e",
+  color: "var(--text-muted)",
   fontWeight: 600,
 };
 
 const input = {
   padding: "10px 14px",
   borderRadius: 8,
-  border: "1px solid #323546",
+  border: "1px solid var(--input-border)",
   fontSize: 13,
-  background: "#1a1b26",
-  color: "#ffffff",
+  background: "var(--input-bg)",
+  color: "var(--text-main)",
   outline: "none",
   boxSizing: "border-box",
   width: "100%",
@@ -469,16 +496,16 @@ const radioCard = {
   gap: 10,
   padding: 10,
   borderRadius: 16,
-  border: "1px solid #323546",
-  background: "#1a1b26",
-  color: "#ffffff",
+  border: "1px solid var(--input-border)",
+  background: "var(--input-bg)",
+  color: "var(--text-main)",
 };
 
 const radioCircleOuter = {
   width: 18,
   height: 18,
   borderRadius: "999px",
-  border: "1px solid #7c829e",
+  border: "1px solid var(--text-muted)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -489,19 +516,19 @@ const radioCircleInner = {
   width: 10,
   height: 10,
   borderRadius: "999px",
-  background: "#ffffff",
+  background: "var(--accent-strong)",
   transition: "opacity 0.15s ease-out",
 };
 
 const radioLabel = {
   fontSize: 13,
   fontWeight: 600,
-  color: "#ffffff",
+  color: "var(--text-main)",
 };
 
 const radioDescription = {
   fontSize: 11,
-  color: "#7c829e",
+  color: "var(--text-muted)",
 };
 
 const toggleRow = {
@@ -514,12 +541,12 @@ const toggleRow = {
 const toggleLabel = {
   fontSize: 13,
   fontWeight: 500,
-  color: "#ffffff",
+  color: "var(--text-main)",
 };
 
 const toggleDescription = {
   fontSize: 11,
-  color: "#7c829e",
+  color: "var(--text-muted)",
 };
 
 const toggleSwitch = {
@@ -552,8 +579,8 @@ const primaryButton = {
   padding: "10px 20px",
   borderRadius: 8,
   border: "none",
-  background: "#ffffff",
-  color: "#0f1017",
+  background: "linear-gradient(135deg, var(--accent), var(--accent-strong))",
+  color: "#ffffff",
   fontWeight: 600,
   fontSize: 13,
   cursor: "pointer",
@@ -563,9 +590,9 @@ const primaryButton = {
 const secondaryButton = {
   padding: "10px 16px",
   borderRadius: 8,
-  border: "1px solid #323546",
+  border: "1px solid var(--input-border)",
   background: "transparent",
-  color: "#ffffff",
+  color: "var(--text-main)",
   fontSize: 12,
   cursor: "pointer",
   transition: "all 0.2s ease",

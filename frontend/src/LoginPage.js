@@ -128,7 +128,7 @@ export default function LoginPage() {
         <div style={brandBlock}>
           <div style={logoMark} />
           <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.1 }}>
-            <span style={logoText}>FlowNest</span>
+            <span style={logoText}>ByteHRm</span>
             <span style={logoTagline}>Where Work Finds Order</span>
           </div>
         </div>
@@ -159,7 +159,7 @@ export default function LoginPage() {
               </svg>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              <span style={cardBrandTitle}>HRM Portal</span>
+              <span style={cardBrandTitle}>ByteHRm Portal</span>
             </div>
             <div style={accountsPill}>
               <span style={accountsPillDot} />
@@ -337,22 +337,6 @@ export default function LoginPage() {
             </form>
           )}
 
-          <div style={divider}>
-            <div style={line} />
-            <span style={dividerText}>OR</span>
-            <div style={line} />
-          </div>
-
-          <button type="button" style={googleButton}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-            </svg>
-            Continue with Google
-          </button>
-
           <div style={bottomTextContainer}>
             <span style={bottomText}>
               {isSignUp ? "Already have an account?" : "Don't have an account?"}
@@ -376,7 +360,7 @@ const page = {
   minHeight: "100vh",
   display: "grid",
   placeItems: "center",
-  background: "#0f1017",
+  background: "var(--bg-shell)",
   fontFamily: "'Inter', 'Outfit', sans-serif",
   color: "var(--text-main)",
   padding: 24,
@@ -411,9 +395,9 @@ const loginCard = {
   maxWidth: 400,
   padding: "32px",
   borderRadius: 24,
-  background: "#12131c",
-  border: "1px solid #232533",
-  boxShadow: "0 20px 40px rgba(0, 0, 0, 0.4)",
+  background: "var(--bg-surface)",
+  border: "1px solid var(--glass-border)",
+  boxShadow: "var(--glass-shadow)",
 };
 
 const cardBrandRow = {
@@ -436,16 +420,16 @@ const brandBadge = {
 const cardBrandTitle = {
   fontSize: 16,
   fontWeight: 700,
-  color: "#ffffff",
+  color: "var(--text-main)",
 };
 
 const accountsPill = {
   marginLeft: "auto",
   padding: "4px 10px",
   borderRadius: 999,
-  border: "1px solid #232533",
+  border: "1px solid var(--glass-border)",
   background: "rgba(255,255,255,0.02)",
-  color: "#7c829e",
+  color: "var(--text-muted)",
   fontSize: 11,
   display: "flex",
   alignItems: "center",
@@ -464,13 +448,13 @@ const loginTitle = {
   fontSize: 26,
   fontWeight: 700,
   marginBottom: 8,
-  color: "#ffffff",
+  color: "var(--text-main)",
   letterSpacing: "-0.5px",
 };
 
 const loginSubtitle = {
   fontSize: 14,
-  color: "#7c829e",
+  color: "var(--text-muted)",
   marginBottom: 24,
 };
 
@@ -499,18 +483,18 @@ const field = {
 
 const label = {
   fontSize: 11,
-  color: "#7c829e",
+  color: "var(--text-muted)",
   fontWeight: 600,
   letterSpacing: "0.05em",
 };
 
 const input = {
   borderRadius: 8,
-  border: "1px solid #323546",
+  border: "1px solid var(--input-border)",
   padding: "12px 14px",
   fontSize: 14,
-  background: "#1a1b26",
-  color: "#ffffff",
+  background: "var(--input-bg)",
+  color: "var(--text-main)",
   outline: "none",
   transition: "all 0.2s ease",
 };
@@ -550,7 +534,7 @@ const footerRow = {
 
 const rememberLabel = {
   fontSize: 13,
-  color: "#7c829e",
+  color: "var(--text-muted)",
   display: "flex",
   alignItems: "center",
   gap: 8,
@@ -561,14 +545,14 @@ const checkboxStyle = {
   width: 16,
   height: 16,
   borderRadius: 4,
-  border: "1px solid #323546",
-  background: "#1a1b26",
+  border: "1px solid var(--input-border)",
+  background: "var(--input-bg)",
   cursor: "pointer",
 };
 
 const linkButton = {
   fontSize: 13,
-  color: "#6b5ce7",
+  color: "var(--accent-strong)",
   background: "none",
   border: "none",
   cursor: "pointer",
@@ -584,45 +568,27 @@ const submitButton = {
   fontSize: 15,
   fontWeight: 600,
   color: "#ffffff",
-  background: "#ffffff",
-  color: "#0f1017",
+  background: "linear-gradient(135deg, var(--accent), var(--accent-strong))",
   transition: "all 0.2s ease",
-};
-
-const googleButton = {
-  width: "100%",
-  padding: "10px 16px",
-  borderRadius: 8,
-  border: "1px solid #323546",
-  background: "transparent",
-  color: "#ffffff",
-  fontSize: 14,
-  fontWeight: 600,
-  cursor: "pointer",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: 10,
-  marginBottom: 20,
 };
 
 const bottomTextContainer = {
   textAlign: "center",
-  marginBottom: 12,
+  margin: "24px 0 12px",
 };
 
 const bottomText = {
   fontSize: 13,
-  color: "#585c78",
+  color: "var(--text-soft)",
 };
 
 const secondaryButton = {
   width: "100%",
   padding: "12px 16px",
   borderRadius: 8,
-  border: "1px solid #323546",
+  border: "1px solid var(--input-border)",
   background: "transparent",
-  color: "#ffffff",
+  color: "var(--text-main)",
   fontSize: 14,
   fontWeight: 600,
   cursor: "pointer",
@@ -647,25 +613,4 @@ const successBox = {
   background: "rgba(16, 185, 129, 0.1)",
   border: "1px solid rgba(16, 185, 129, 0.2)",
   color: "#10b981",
-};
-
-const divider = {
-  display: "flex",
-  alignItems: "center",
-  gap: 16,
-  margin: "24px 0",
-};
-
-const line = {
-  flex: 1,
-  height: 1,
-  background: "#232533",
-};
-
-const dividerText = {
-  fontSize: 12,
-  color: "#585c78",
-  textTransform: "uppercase",
-  letterSpacing: 1,
-  fontWeight: 600,
 };

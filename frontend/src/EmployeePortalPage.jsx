@@ -388,7 +388,7 @@ const EmployeePortalPage = () => {
                 lineHeight: 1.1,
               }}
             >
-              <span style={logoText}>FlowNest</span>
+              <span style={logoText}>ByteHRm</span>
               <span style={logoTagline}>Employee Portal</span>
             </div>
           </div>
@@ -510,7 +510,7 @@ function SidebarItem({ icon, label, active, onClick }) {
 const page = {
   display: "flex",
   minHeight: "100vh",
-  background: "radial-gradient(circle at top, rgba(124, 108, 247, 0.12), transparent 26%), linear-gradient(180deg, #09090f 0%, #0f1017 100%)",
+  background: "var(--bg-shell)",
   color: "var(--text-main)",
   fontFamily: "'Outfit', sans-serif",
 };
@@ -521,8 +521,8 @@ const sidebar = {
   display: "flex",
   flexDirection: "column",
   justifyContent: "space-between",
-  background: "rgba(14, 15, 22, 0.96)",
-  borderRight: "1px solid rgba(88, 92, 120, 0.24)",
+  background: "var(--bg-surface)",
+  borderRight: "1px solid var(--glass-border)",
 };
 
 const sidebarHeader = {
@@ -562,9 +562,9 @@ const sidebarUser = {
   alignItems: "center",
   gap: 12,
   padding: "16px",
-  background: "rgba(255,255,255,0.03)",
+  background: "var(--bg-surface-soft)",
   borderRadius: 16,
-  border: "1px solid rgba(88, 92, 120, 0.24)",
+  border: "1px solid var(--glass-border)",
 };
 
 const avatarSmall = {
@@ -582,7 +582,7 @@ const avatarSmall = {
 
 const main = {
   flex: 1,
-  background: "radial-gradient(circle at top right, rgba(124, 108, 247, 0.08), transparent 400px), transparent",
+  background: "transparent",
   overflowY: "auto",
 };
 

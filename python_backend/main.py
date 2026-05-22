@@ -31,7 +31,7 @@ BASE_DIR = Path(__file__).resolve().parent
 UPLOAD_DIR = BASE_DIR / "uploads"
 UPLOAD_DIR.mkdir(exist_ok=True)
 
-app = FastAPI(title="HumanResource HRM API")
+app = FastAPI(title="ByteHRm API")
 app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 
 app.add_middleware(GZipMiddleware, minimum_size=1000)
@@ -50,7 +50,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 @app.get("/")
 def root():
     return {
-        "message": "HRM backend is running",
+        "message": "ByteHRm backend is running",
         "health": "/api/health",
         "docs": "/docs",
     }
@@ -432,7 +432,7 @@ def login(request: schemas.LoginRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Invalid username or password")
 
     access_token = utils.create_access_token(data={"sub": user.username})
-    return {"token": access_token, "user": user}
+    return {"token": access_token, "user": serialize_user(user)}
 
 
 @app.get("/api/auth/me")
