@@ -407,7 +407,7 @@ export default function MyDashboardContent(props) {
         <div style={slipContainer}>
           <div style={slipHeader}>
             <h2 style={{ margin: 0 }}>PAYSLIP - {monthName.toUpperCase()} {year}</h2>
-            <p style={{ margin: "4px 0" }}>FlowNest HRM System</p>
+            <p style={{ margin: "4px 0" }}>ByteHRm System</p>
           </div>
           <hr />
           <div style={slipGrid}>

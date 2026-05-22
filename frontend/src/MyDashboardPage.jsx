@@ -163,7 +163,7 @@ export default function MyDashboardPage() {
                 lineHeight: 1.1,
               }}
             >
-              <span style={logoText}>FlowNest</span>
+              <span style={logoText}>ByteHRm</span>
               <span style={logoTagline}>Where Work Finds Order</span>
             </div>
           </div>
@@ -257,11 +257,11 @@ export default function MyDashboardPage() {
           <div style={avatarSmall}>{displayName.charAt(0)}</div>
           <div>
             <div
-              style={{ fontSize: 12, color: "#f9fafb", fontWeight: 600 }}
+              style={{ fontSize: 12, color: "var(--text-main)", fontWeight: 600 }}
             >
               {displayName}
             </div>
-            <div style={{ fontSize: 11, color: "#9ca3af" }}>
+            <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
               {designation}
             </div>
           </div>
@@ -334,8 +334,8 @@ function SidebarItem({ icon, label, active, onClick }) {
 const page = {
   display: "flex",
   minHeight: "100vh",
-  background: "#0f1017",
-  color: "#ffffff",
+  background: "var(--bg-shell)",
+  color: "var(--text-main)",
   fontFamily: "'Inter', 'Outfit', sans-serif",
 };
 
@@ -345,9 +345,9 @@ const sidebar = {
   display: "flex",
   flexDirection: "column",
   justifyContent: "space-between",
-  background: "#12131c",
-  color: "#ffffff",
-  borderRight: "1px solid #232533",
+  background: "var(--bg-surface)",
+  color: "var(--text-main)",
+  borderRight: "1px solid var(--glass-border)",
 };
 
 const sidebarHeader = {
@@ -361,19 +361,19 @@ const logoDot = {
   width: 20,
   height: 20,
   borderRadius: "50%",
-  background: "#ffffff",
-  boxShadow: "0 0 16px rgba(255, 255, 255, 0.4)",
+  background: "linear-gradient(135deg, var(--accent), var(--accent-strong))",
+  boxShadow: "0 0 16px rgba(124, 108, 247, 0.4)",
 };
 
 const logoText = {
   fontWeight: 700,
   letterSpacing: "-0.5px",
   fontSize: 18,
-  color: "#ffffff"
+  color: "var(--text-main)"
 };
 
 const logoTagline = {
-  color: "#7c829e",
+  color: "var(--text-muted)",
   fontWeight: 500,
   letterSpacing: "0.05em",
   fontSize: "11px",
@@ -392,21 +392,21 @@ const sidebarUser = {
   gap: 12,
   padding: "12px",
   borderRadius: "12px",
-  background: "#1a1b26",
-  border: "1px solid #232533"
+  background: "var(--bg-surface-soft)",
+  border: "1px solid var(--glass-border)"
 };
 
 const avatarSmall = {
   width: 36,
   height: 36,
   borderRadius: "50%",
-  background: "#ffffff",
+  background: "linear-gradient(135deg, var(--accent), var(--accent-strong))",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   fontSize: 16,
   fontWeight: 700,
-  color: "#0f1017",
+  color: "#ffffff",
 };
 
 const main = {
@@ -422,9 +422,9 @@ const userMenu = {
   position: "absolute",
   right: 0,
   bottom: 60,
-  background: "#12131c",
+  background: "var(--bg-surface)",
   borderRadius: 12,
-  border: "1px solid #323546",
+  border: "1px solid var(--glass-border)",
   padding: 8,
   boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
   zIndex: 10,
@@ -434,7 +434,7 @@ const userMenu = {
 const userMenuItem = {
   border: "none",
   background: "transparent",
-  color: "#ffffff",
+  color: "var(--text-main)",
   fontSize: 14,
   padding: "8px 12px",
   width: "100%",
@@ -447,8 +447,8 @@ const userMenuItem = {
 const emptyStateCard = {
   padding: 32,
   borderRadius: 16,
-  background: "#12131c",
-  color: "#ffffff",
-  border: "1px solid #232533",
-  boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
+  background: "var(--bg-surface)",
+  color: "var(--text-main)",
+  border: "1px solid var(--glass-border)",
+  boxShadow: "var(--glass-shadow)",
 };
