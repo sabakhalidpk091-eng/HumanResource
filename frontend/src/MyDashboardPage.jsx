@@ -21,6 +21,7 @@ import AssetsPage from "./AssetsPage";
 import ApplicantsPage from "./ApplicantsPage";
 import TrainingPage from "./TrainingPage";
 import PayrollPage from "./PayrollPage";
+import { useIsNarrowScreen } from "./responsive";
 import { 
   LayoutDashboard, 
   Users, 
@@ -43,6 +44,7 @@ export default function MyDashboardPage() {
 
   const [activePage, setActivePage] = useState("analytics");
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const isNarrow = useIsNarrowScreen();
 
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -152,7 +154,7 @@ export default function MyDashboardPage() {
 
   return (
     <div style={page}>
-      <aside style={sidebar}>
+      <aside style={isNarrow ? { ...sidebar, ...sidebarNarrow } : sidebar}>
         <div>
           <div style={sidebarHeader}>
             <div style={logoDot} />
@@ -161,6 +163,7 @@ export default function MyDashboardPage() {
                 display: "flex",
                 flexDirection: "column",
                 lineHeight: 1.1,
+                ...(isNarrow ? { display: "none" } : {}),
               }}
             >
               <span style={logoText}>FlowNest</span>
@@ -168,7 +171,7 @@ export default function MyDashboardPage() {
             </div>
           </div>
 
-          <div style={sidebarNav}>
+          <div style={isNarrow ? { ...sidebarNav, ...sidebarNavNarrow } : sidebarNav}>
             <SidebarItem
               icon={<LayoutDashboard size={18} />}
               label="Overview"
@@ -251,11 +254,17 @@ export default function MyDashboardPage() {
         </div>
 
         <div
-          style={{ ...sidebarUser, position: "relative", cursor: "pointer" }}
+          style={{
+            ...sidebarUser,
+            ...(isNarrow ? sidebarUserNarrow : {}),
+            position: "relative",
+            cursor: "pointer",
+          }}
           onClick={() => setShowUserMenu((prev) => !prev)}
+          title={isNarrow ? displayName : undefined}
         >
           <div style={avatarSmall}>{displayName.charAt(0)}</div>
-          <div>
+          <div style={isNarrow ? { display: "none" } : undefined}>
             <div
               style={{ fontSize: 12, color: "#f9fafb", fontWeight: 600 }}
             >
@@ -283,7 +292,7 @@ export default function MyDashboardPage() {
         </div>
       </aside>
 
-      <main style={main}>{renderMainContent()}</main>
+      <main style={isNarrow ? { ...main, ...mainNarrow } : main}>{renderMainContent()}</main>
     </div>
   );
 }
@@ -291,14 +300,18 @@ export default function MyDashboardPage() {
 /* small components + styles reused from your previous file */
 
 function SidebarItem({ icon, label, active, onClick }) {
+  const isNarrow = useIsNarrowScreen();
+
   return (
     <div
       onClick={onClick}
+      title={isNarrow ? label : undefined}
       style={{
         display: "flex",
         alignItems: "center",
-        gap: 12,
-        padding: "10px 16px",
+        justifyContent: isNarrow ? "center" : "flex-start",
+        gap: isNarrow ? 0 : 12,
+        padding: isNarrow ? "12px 0" : "10px 16px",
         borderRadius: 12,
         marginBottom: 4,
         cursor: "pointer",
@@ -326,7 +339,7 @@ function SidebarItem({ icon, label, active, onClick }) {
       >
         {icon}
       </div>
-      <span>{label}</span>
+      {!isNarrow && <span>{label}</span>}
     </div>
   );
 }
@@ -337,17 +350,29 @@ const page = {
   background: "#0f1017",
   color: "#ffffff",
   fontFamily: "'Inter', 'Outfit', sans-serif",
+  overflowX: "hidden",
 };
 
 const sidebar = {
   width: 250,
   padding: 24,
+  minWidth: 250,
   display: "flex",
   flexDirection: "column",
   justifyContent: "space-between",
   background: "#12131c",
   color: "#ffffff",
   borderRight: "1px solid #232533",
+  height: "100vh",
+  position: "sticky",
+  top: 0,
+  overflowY: "auto",
+};
+
+const sidebarNarrow = {
+  width: 76,
+  minWidth: 76,
+  padding: 12,
 };
 
 const sidebarHeader = {
@@ -355,6 +380,7 @@ const sidebarHeader = {
   alignItems: "center",
   gap: 12,
   marginBottom: 32,
+  minHeight: 40,
 };
 
 const logoDot = {
@@ -386,6 +412,12 @@ const sidebarNav = {
   paddingBottom: 16,
 };
 
+const sidebarNavNarrow = {
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "stretch",
+};
+
 const sidebarUser = {
   display: "flex",
   alignItems: "center",
@@ -394,6 +426,11 @@ const sidebarUser = {
   borderRadius: "12px",
   background: "#1a1b26",
   border: "1px solid #232533"
+};
+
+const sidebarUserNarrow = {
+  justifyContent: "center",
+  padding: "12px 0",
 };
 
 const avatarSmall = {
@@ -411,11 +448,16 @@ const avatarSmall = {
 
 const main = {
   flex: 1,
+  minWidth: 0,
   padding: 32,
   display: "flex",
   flexDirection: "column",
   gap: 24,
   overflowY: "auto",
+};
+
+const mainNarrow = {
+  padding: 16,
 };
 
 const userMenu = {

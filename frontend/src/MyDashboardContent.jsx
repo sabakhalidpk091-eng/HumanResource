@@ -7,6 +7,7 @@ import {
   ResponsiveContainer,
   Label,
 } from "recharts";
+import { ResponsiveGrid, useIsNarrowScreen } from "./responsive";
 
 const DONUT_COLORS = ["#22c55e", "#0ea5e9", "#f97316"];
 
@@ -19,6 +20,7 @@ export default function MyDashboardContent(props) {
     setSearchOpen,
     setSearchQuery,
   } = props;
+  const isNarrow = useIsNarrowScreen();
 
   const {
     employee = {},
@@ -119,7 +121,7 @@ export default function MyDashboardContent(props) {
   return (
     <div style={main}>
       {/* Header row */}
-      <div style={topRow}>
+      <div style={isNarrow ? { ...topRow, ...topRowNarrow } : topRow}>
         <div>
           <h1 style={headline}>Hello {displayName}</h1>
           <p style={subline}>{designation}</p>
@@ -157,7 +159,7 @@ export default function MyDashboardContent(props) {
       )}
 
       {/* First row: profile + working format + onboarding */}
-      <div style={firstRowGrid}>
+      <ResponsiveGrid style={firstRowGrid} narrowStyle={singleColumnGrid}>
         {/* Profile card */}
         <div style={profileCard}>
           <div style={avatarLarge}>{displayName.charAt(0)}</div>
@@ -248,7 +250,7 @@ export default function MyDashboardContent(props) {
             </div>
           </div>
         </div>
-      </div>
+      </ResponsiveGrid>
 
       {/* Weekly schedule */}
       <div style={scheduleCard}>
@@ -587,12 +589,19 @@ const main = {
   display: "flex",
   flexDirection: "column",
   gap: 18,
+  minWidth: 0,
 };
 
 const topRow = {
   display: "flex",
   justifyContent: "space-between",
   alignItems: "flex-end",
+  gap: 16,
+};
+
+const topRowNarrow = {
+  alignItems: "flex-start",
+  flexDirection: "column",
 };
 
 const headline = {
@@ -637,7 +646,7 @@ const premiumButton = {
 };
 
 const searchInput = {
-  width: 260,
+  width: "min(100%, 360px)",
   padding: "7px 12px",
   borderRadius: 999,
   border: "1px solid #323546",
@@ -653,6 +662,10 @@ const firstRowGrid = {
   gridTemplateColumns: "minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 1.2fr)",
   gap: 16,
   alignItems: "stretch",
+};
+
+const singleColumnGrid = {
+  gridTemplateColumns: "1fr",
 };
 
 const glassCard = {

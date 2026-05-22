@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import dayjs from "dayjs";
 import api from "./api";
+import { ResponsiveGrid, useIsNarrowScreen } from "./responsive";
 
 export default function MarkAttendancePage() {
   const [date, setDate] = useState(dayjs().format("YYYY-MM-DD"));
@@ -15,6 +16,7 @@ export default function MarkAttendancePage() {
   const [records, setRecords] = useState([]);
   const [loadingTable, setLoadingTable] = useState(false);
   const [errorTable, setErrorTable] = useState("");
+  const isNarrow = useIsNarrowScreen();
 
   const loadMyAttendance = async () => {
     try {
@@ -100,7 +102,7 @@ export default function MarkAttendancePage() {
   };
 
   return (
-    <div style={{ padding: 24, minHeight: "100vh", background: "#0f1017", color: "#ffffff" }}>
+    <div style={isNarrow ? { ...page, ...pageNarrow } : page}>
       {/* FORM */}
       <div
         style={{
@@ -123,15 +125,8 @@ export default function MarkAttendancePage() {
           Attendance Tracking Form
         </h2>
 
-        <form
-          onSubmit={handleSubmit}
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            columnGap: 16,
-            rowGap: 16,
-          }}
-        >
+        <form onSubmit={handleSubmit}>
+          <ResponsiveGrid style={formGrid} narrowStyle={singleColumnGrid}>
           <div>
             <label
               style={{ display: "block", fontSize: 13, marginBottom: 4 }}
@@ -179,7 +174,7 @@ export default function MarkAttendancePage() {
             <div style={hint}>Optional, only for present</div>
           </div>
 
-          <div style={{ gridColumn: "1 / span 2" }}>
+          <div style={isNarrow ? undefined : fullRow}>
             <label
               style={{ display: "block", fontSize: 13, marginBottom: 4 }}
             >
@@ -220,7 +215,7 @@ export default function MarkAttendancePage() {
             </div>
           </div>
 
-          <div style={{ gridColumn: "1 / span 2" }}>
+          <div style={isNarrow ? undefined : fullRow}>
             <label
               style={{ display: "block", fontSize: 13, marginBottom: 4 }}
             >
@@ -237,7 +232,7 @@ export default function MarkAttendancePage() {
 
           <div
             style={{
-              gridColumn: "1 / span 2",
+              ...(isNarrow ? {} : fullRow),
               display: "flex",
               justifyContent: "center",
               marginTop: 8,
@@ -251,6 +246,7 @@ export default function MarkAttendancePage() {
               {saving ? "Recording..." : "Record Attendance"}
             </button>
           </div>
+          </ResponsiveGrid>
         </form>
 
         {message && (
@@ -357,6 +353,32 @@ const input = {
   outline: "none",
   boxSizing: "border-box",
   transition: "all 0.2s ease"
+};
+
+const page = {
+  padding: 24,
+  minHeight: "100vh",
+  background: "#0f1017",
+  color: "#ffffff",
+};
+
+const pageNarrow = {
+  padding: 16,
+};
+
+const formGrid = {
+  display: "grid",
+  gridTemplateColumns: "1fr 1fr",
+  columnGap: 16,
+  rowGap: 16,
+};
+
+const singleColumnGrid = {
+  gridTemplateColumns: "1fr",
+};
+
+const fullRow = {
+  gridColumn: "1 / span 2",
 };
 
 const hint = {

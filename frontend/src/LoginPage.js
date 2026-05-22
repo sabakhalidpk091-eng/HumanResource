@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from "react";
 import api from "./api";
 import { useAuth } from "./AuthContext";
+import { useIsNarrowScreen } from "./responsive";
 
 const SIGN_IN = "sign-in";
 const SIGN_UP = "sign-up";
 
 export default function LoginPage() {
   const { login, register } = useAuth();
+  const isNarrow = useIsNarrowScreen();
 
   const [mode, setMode] = useState(SIGN_IN);
   const [loading, setLoading] = useState(false);
@@ -148,7 +150,7 @@ export default function LoginPage() {
       </div>
 
       <div style={rightWrapper}>
-        <div style={loginCard}>
+        <div style={isNarrow ? { ...loginCard, ...loginCardNarrow } : loginCard}>
           <div style={cardBrandRow}>
             <div style={brandBadge}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -382,6 +384,11 @@ const page = {
   padding: 24,
 };
 
+const loginCardNarrow = {
+  padding: "24px 18px",
+  borderRadius: 20,
+};
+
 const leftPanel = {
   display: "none",
 };
@@ -583,7 +590,6 @@ const submitButton = {
   cursor: "pointer",
   fontSize: 15,
   fontWeight: 600,
-  color: "#ffffff",
   background: "#ffffff",
   color: "#0f1017",
   transition: "all 0.2s ease",
