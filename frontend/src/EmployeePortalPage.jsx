@@ -7,6 +7,7 @@ import TasksPage from "./TasksPage";
 import MyLeavePage from "./MyLeavePage";
 import SettingsPage from "./SettingsPage";
 import MarkAttendancePage from "./MarkAttendancePage";
+import { useIsNarrowScreen } from "./responsive";
 import { 
   LayoutDashboard, 
   CheckSquare, 
@@ -285,6 +286,7 @@ const EmployeePortalPage = () => {
 
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const isNarrow = useIsNarrowScreen();
 
   const loadStats = async () => {
     setLoading(true);
@@ -377,7 +379,7 @@ const EmployeePortalPage = () => {
 
   return (
     <div style={page}>
-      <aside style={sidebar}>
+      <aside style={isNarrow ? { ...sidebar, ...sidebarNarrow } : sidebar}>
         <div>
           <div style={sidebarHeader}>
             <div style={logoDot} />
@@ -386,6 +388,7 @@ const EmployeePortalPage = () => {
                 display: "flex",
                 flexDirection: "column",
                 lineHeight: 1.1,
+                ...(isNarrow ? { display: "none" } : {}),
               }}
             >
               <span style={logoText}>FlowNest</span>
@@ -445,9 +448,9 @@ const EmployeePortalPage = () => {
           </div>
         </div>
 
-        <div style={sidebarUser}>
+        <div style={isNarrow ? { ...sidebarUser, ...sidebarUserNarrow } : sidebarUser}>
           <div style={avatarSmall}>{displayName.charAt(0)}</div>
-          <div style={{flex: 1}}>
+          <div style={isNarrow ? { display: "none" } : {flex: 1}}>
             <div style={{ fontSize: 12, color: "#f9fafb", fontWeight: 600 }}>
               {displayName}
             </div>
@@ -474,20 +477,24 @@ const EmployeePortalPage = () => {
         </div>
       </aside>
 
-      <main style={main}>{renderMain()}</main>
+      <main style={isNarrow ? { ...main, ...mainNarrow } : main}>{renderMain()}</main>
     </div>
   );
 };
 
 function SidebarItem({ icon, label, active, onClick }) {
+  const isNarrow = useIsNarrowScreen();
+
   return (
     <div
       onClick={onClick}
+      title={isNarrow ? label : undefined}
       style={{
         display: "flex",
         alignItems: "center",
-        gap: 12,
-        padding: "10px 16px",
+        justifyContent: isNarrow ? "center" : "flex-start",
+        gap: isNarrow ? 0 : 12,
+        padding: isNarrow ? "12px 0" : "10px 16px",
         borderRadius: 12,
         marginBottom: 4,
         cursor: "pointer",
@@ -501,7 +508,7 @@ function SidebarItem({ icon, label, active, onClick }) {
       <div style={{ color: active ? "var(--accent-strong)" : "inherit", display: "flex" }}>
         {icon}
       </div>
-      <span>{label}</span>
+      {!isNarrow && <span>{label}</span>}
     </div>
   );
 }
@@ -513,16 +520,28 @@ const page = {
   background: "radial-gradient(circle at top, rgba(124, 108, 247, 0.12), transparent 26%), linear-gradient(180deg, #09090f 0%, #0f1017 100%)",
   color: "var(--text-main)",
   fontFamily: "'Outfit', sans-serif",
+  overflowX: "hidden",
 };
 
 const sidebar = {
   width: 260,
+  minWidth: 260,
   padding: 24,
   display: "flex",
   flexDirection: "column",
   justifyContent: "space-between",
   background: "rgba(14, 15, 22, 0.96)",
   borderRight: "1px solid rgba(88, 92, 120, 0.24)",
+  height: "100vh",
+  position: "sticky",
+  top: 0,
+  overflowY: "auto",
+};
+
+const sidebarNarrow = {
+  width: 76,
+  minWidth: 76,
+  padding: 12,
 };
 
 const sidebarHeader = {
@@ -567,6 +586,11 @@ const sidebarUser = {
   border: "1px solid rgba(88, 92, 120, 0.24)",
 };
 
+const sidebarUserNarrow = {
+  justifyContent: "center",
+  padding: "12px 0",
+};
+
 const avatarSmall = {
   width: 36,
   height: 36,
@@ -582,8 +606,13 @@ const avatarSmall = {
 
 const main = {
   flex: 1,
+  minWidth: 0,
   background: "radial-gradient(circle at top right, rgba(124, 108, 247, 0.08), transparent 400px), transparent",
   overflowY: "auto",
+};
+
+const mainNarrow = {
+  minWidth: 0,
 };
 
 // Profile Specific Styles

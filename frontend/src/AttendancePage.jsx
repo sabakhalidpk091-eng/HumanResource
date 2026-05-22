@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import dayjs from "dayjs";
 import { useAuth } from "./AuthContext";
 import api from "./api";
+import { useIsNarrowScreen } from "./responsive";
 
 const AttendancePage = () => {
   const { user } = useAuth();
@@ -18,6 +19,7 @@ const AttendancePage = () => {
   );
   const [employeeId, setEmployeeId] = useState("");
   const [employees, setEmployees] = useState([]);
+  const isNarrow = useIsNarrowScreen();
 
   const isAdminView =
     user?.role === "Admin" ||
@@ -114,7 +116,7 @@ const AttendancePage = () => {
   }
 
   return (
-    <div style={{ padding: 24, minHeight: "100vh", background: "#0f1017", color: "#ffffff" }}>
+    <div style={isNarrow ? { ...page, ...pageNarrow } : page}>
       <div
         style={{
           display: "flex",
@@ -149,15 +151,7 @@ const AttendancePage = () => {
             type="date"
             value={fromDate}
             onChange={(e) => setFromDate(e.target.value)}
-            style={{
-              border: "1px solid #323546",
-              borderRadius: 4,
-              padding: "6px 8px",
-              fontSize: 12,
-              background: "#1a1b26",
-              color: "#ffffff",
-              outline: "none"
-            }}
+            style={filterInput}
           />
         </div>
 
@@ -171,15 +165,7 @@ const AttendancePage = () => {
             type="date"
             value={toDate}
             onChange={(e) => setToDate(e.target.value)}
-            style={{
-              border: "1px solid #323546",
-              borderRadius: 4,
-              padding: "6px 8px",
-              fontSize: 12,
-              background: "#1a1b26",
-              color: "#ffffff",
-              outline: "none"
-            }}
+            style={filterInput}
           />
         </div>
 
@@ -192,16 +178,7 @@ const AttendancePage = () => {
           <select
             value={employeeId}
             onChange={(e) => setEmployeeId(e.target.value)}
-            style={{
-              border: "1px solid #323546",
-              borderRadius: 4,
-              padding: "6px 8px",
-              fontSize: 12,
-              minWidth: 180,
-              background: "#1a1b26",
-              color: "#ffffff",
-              outline: "none"
-            }}
+            style={{ ...filterInput, minWidth: 180 }}
           >
             <option value="">All</option>
             {employees.map((emp) => (
@@ -215,16 +192,7 @@ const AttendancePage = () => {
         <button
           type="submit"
           disabled={loading}
-          style={{
-            background: "#ffffff",
-            color: "#0f1017",
-            borderRadius: 4,
-            border: "none",
-            padding: "8px 16px",
-            fontSize: 13,
-            cursor: "pointer",
-            fontWeight: 600
-          }}
+          style={filterButton}
         >
           {loading ? "Loading..." : "Apply"}
         </button>
@@ -312,6 +280,38 @@ const th = {
   borderBottom: "1px solid #232533",
   fontWeight: 600,
   color: "#7c829e",
+};
+
+const page = {
+  padding: 24,
+  minHeight: "100vh",
+  background: "#0f1017",
+  color: "#ffffff",
+};
+
+const pageNarrow = {
+  padding: 16,
+};
+
+const filterInput = {
+  border: "1px solid #323546",
+  borderRadius: 8,
+  padding: "8px 10px",
+  fontSize: 12,
+  background: "#1a1b26",
+  color: "#ffffff",
+  outline: "none",
+};
+
+const filterButton = {
+  background: "#ffffff",
+  color: "#0f1017",
+  borderRadius: 8,
+  border: "none",
+  padding: "9px 18px",
+  fontSize: 13,
+  cursor: "pointer",
+  fontWeight: 600,
 };
 
 const td = {

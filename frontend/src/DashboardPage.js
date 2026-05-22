@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
+import { ResponsiveGrid } from "./responsive";
 
 export default function DashboardPage() {
   const [stats, setStats] = useState(null);
@@ -74,7 +75,7 @@ export default function DashboardPage() {
         </header>
 
         {/* Top cards */}
-        <div style={cardsRow}>
+        <ResponsiveGrid style={cardsRow} narrowStyle={singleColumnGrid}>
           <div style={card}>
             <h4 style={cardTitle}>Employees</h4>
             <p style={bigNumber}>{employees.total}</p>
@@ -109,7 +110,7 @@ export default function DashboardPage() {
               Due next 7 days: {tasks.due_next_7_days}
             </p>
           </div>
-        </div>
+        </ResponsiveGrid>
 
         {/* Bar chart */}
         <div style={chartCard}>
@@ -196,6 +197,10 @@ const cardsRow = {
   display: "grid",
   gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
   gap: 16,
+};
+
+const singleColumnGrid = {
+  gridTemplateColumns: "1fr",
 };
 
 const card = {
