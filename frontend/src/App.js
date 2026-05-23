@@ -1,64 +1,89 @@
 // App.js
-import React from "react";
-import LoginPage from "./LoginPage";
-import EmployeePortalPage from "./EmployeePortalPage";
-import MyDashboardPage from "./MyDashboardPage";
+import React, { Suspense, lazy } from "react";
 import { useAuth } from "./AuthContext";
+import { ThemeProvider } from "./ThemeContext";
 
-function App() {
+// Lazy-load heavy pages — only downloaded when first visited
+// This splits the bundle and makes the initial load much faster
+const LoginPage = lazy(() => import("./LoginPage"));
+const MyDashboardPage = lazy(() => import("./MyDashboardPage"));
+const EmployeePortalPage = lazy(() => import("./EmployeePortalPage"));
+
+function AppRoutes() {
   const { user, initializing } = useAuth();
 
-  if (initializing) {
-    return <LoadingScreen />;
-  }
-
-  if (!user) {
-    return <LoginPage />;
-  }
-
-  if (user.role === "Employee") {
-    return <EmployeePortalPage />;
-  }
-
-  return <MyDashboardPage />;
+  if (initializing) return <LoadingScreen />;
+  if (!user)
+    return (
+      <Suspense fallback={<LoadingScreen />}>
+        <LoginPage />
+      </Suspense>
+    );
+  if (user.role === "Employee")
+    return (
+      <Suspense fallback={<LoadingScreen />}>
+        <EmployeePortalPage />
+      </Suspense>
+    );
+  return (
+    <Suspense fallback={<LoadingScreen />}>
+      <MyDashboardPage />
+    </Suspense>
+  );
 }
 
-// Skeleton loading screen that matches the app's dark theme
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AppRoutes />
+    </ThemeProvider>
+  );
+}
+
 function LoadingScreen() {
   return (
-    <div style={loadingPage}>
-      <div style={loadingCard}>
-        <div style={shimmer} />
-        <div style={{ ...shimmer, width: "60%", marginTop: 12 }} />
-        <div style={{ ...shimmer, width: "80%", marginTop: 12 }} />
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "var(--bg-body)",
+      }}
+    >
+      <div
+        style={{
+          width: 280,
+          display: "flex",
+          flexDirection: "column",
+          gap: 12,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            marginBottom: 8,
+          }}
+        >
+          <div
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: 8,
+              background:
+                "linear-gradient(135deg, var(--accent), var(--accent-strong))",
+              flexShrink: 0,
+            }}
+          />
+          <div className="skeleton skeleton-title" style={{ width: 120 }} />
+        </div>
+        <div className="skeleton skeleton-text" style={{ width: "100%" }} />
+        <div className="skeleton skeleton-text" style={{ width: "75%" }} />
+        <div className="skeleton skeleton-text" style={{ width: "88%" }} />
+        <div className="skeleton skeleton-card" style={{ marginTop: 4 }} />
       </div>
     </div>
   );
 }
-
-const loadingPage = {
-  minHeight: "100vh",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  background: "#0f1017",
-};
-
-const loadingCard = {
-  width: 320,
-  padding: 32,
-  borderRadius: 16,
-  background: "#12131c",
-  border: "1px solid #232533",
-};
-
-const shimmer = {
-  height: 16,
-  borderRadius: 8,
-  background: "linear-gradient(90deg, #1a1b26 25%, #232533 50%, #1a1b26 75%)",
-  backgroundSize: "200% 100%",
-  animation: "shimmer 1.5s infinite",
-  width: "100%",
-};
-
-export default App;

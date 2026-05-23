@@ -13,23 +13,30 @@ root.render(
     <BrowserRouter>
       <AuthProvider>
         <App />
-        {/* Global toast notifications — replaces all alert() calls */}
         <Toaster
           position="top-right"
           toastOptions={{
             duration: 4000,
             style: {
-              background: "#12131c",
-              color: "#ffffff",
-              border: "1px solid #323546",
-              borderRadius: "10px",
-              fontSize: "14px",
+              background: "var(--bg-surface)",
+              color: "var(--text-main)",
+              border: "1px solid var(--border-strong)",
+              borderRadius: "12px",
+              fontSize: "13.5px",
+              fontFamily: "Inter, Outfit, sans-serif",
+              boxShadow: "var(--shadow-md)",
             },
             success: {
-              iconTheme: { primary: "#10b981", secondary: "#12131c" },
+              iconTheme: {
+                primary: "var(--success)",
+                secondary: "var(--bg-surface)",
+              },
             },
             error: {
-              iconTheme: { primary: "#f26d7d", secondary: "#12131c" },
+              iconTheme: {
+                primary: "var(--danger)",
+                secondary: "var(--bg-surface)",
+              },
             },
           }}
         />

@@ -1,4 +1,4 @@
-// DashboardPage.jsx
+// DashboardPage.js
 import React, { useEffect, useState } from "react";
 import api from "./api";
 import {
@@ -9,40 +9,110 @@ import {
   Tooltip,
   ResponsiveContainer,
   CartesianGrid,
+  Cell,
 } from "recharts";
+import { Users, Briefcase, CheckSquare, TrendingUp } from "lucide-react";
+
+const COLORS = ["#7c6cf7", "#22c55e", "#38bdf8", "#f43f5e"];
+
+function StatCard({ icon: Icon, label, value, sub, color }) {
+  return (
+    <div className="stat-card">
+      <div
+        className="flex items-center justify-between"
+        style={{ marginBottom: 12 }}
+      >
+        <div className="stat-label">{label}</div>
+        <div
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 10,
+            background: `${color}18`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Icon size={16} color={color} />
+        </div>
+      </div>
+      <div className="stat-value">{value ?? "—"}</div>
+      {sub && <div className="stat-sub">{sub}</div>}
+    </div>
+  );
+}
+
+const CustomTooltip = ({ active, payload, label }) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div
+      style={{
+        background: "var(--bg-surface)",
+        border: "1px solid var(--border-strong)",
+        borderRadius: 10,
+        padding: "10px 14px",
+        fontSize: 13,
+      }}
+    >
+      <p style={{ color: "var(--text-muted)", marginBottom: 4 }}>{label}</p>
+      <p style={{ color: "var(--text-main)", fontWeight: 700 }}>
+        {payload[0].value}
+      </p>
+    </div>
+  );
+};
 
 export default function DashboardPage() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const loadStats = async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const res = await api.get("/stats/overview");
-      setStats(res.data);
-    } catch (err) {
-      console.error("Overview stats load error:", err);
-      setError(err.response?.data?.error || "Could not load dashboard stats.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    loadStats();
+    let cancelled = false;
+    api
+      .get("/stats/overview")
+      .then((res) => {
+        if (!cancelled) setStats(res.data);
+      })
+      .catch((err) => {
+        if (!cancelled)
+          setError(err.response?.data?.error || "Could not load stats.");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   if (loading) {
-    return <div style={{ padding: 24 }}>Loading dashboard...</div>;
+    return (
+      <div className="page-body">
+        <div
+          className="skeleton skeleton-title"
+          style={{ width: 200, marginBottom: 24 }}
+        />
+        <div className="grid-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="skeleton skeleton-card" />
+          ))}
+        </div>
+        <div
+          className="skeleton"
+          style={{ height: 280, borderRadius: 20, marginTop: 24 }}
+        />
+      </div>
+    );
   }
 
-  if (error || !stats) {
+  if (error) {
     return (
-      <div style={{ padding: 24 }}>
-        <h2>Dashboard overview</h2>
-        <p style={{ color: "red" }}>{error || "No stats available."}</p>
+      <div className="page-body">
+        <div className="card card-pad">
+          <p style={{ color: "var(--danger)" }}>{error}</p>
+        </div>
       </div>
     );
   }
@@ -50,190 +120,236 @@ export default function DashboardPage() {
   const { employees, projects, tasks } = stats;
 
   const taskStatusData = [
-    { name: "To do", value: tasks.todo },
-    { name: "In progress", value: tasks.in_progress },
+    { name: "To Do", value: tasks.todo },
+    { name: "In Progress", value: tasks.in_progress },
     { name: "Done", value: tasks.done },
     { name: "Overdue", value: tasks.overdue },
   ];
 
   return (
-    <div style={pageBg}>
-      <div style={pageInner}>
-        {/* Header */}
-        <header style={headerRow}>
-          <div>
-            <div style={eyebrow}>CONTROL ROOM</div>
-            <h2 style={title}>Dashboard overview</h2>
-          </div>
-          <div style={badge}>
-            <span style={{ fontSize: 11, color: "#6b7280" }}>Tasks</span>
-            <span style={{ fontSize: 16, fontWeight: 600 }}>
-              {tasks.total}
-            </span>
-          </div>
-        </header>
+    <div className="page-body">
+      {/* Header */}
+      <div className="page-header">
+        <div>
+          <h2 className="page-title">Overview</h2>
+          <p className="page-subtitle">Organisation-wide snapshot</p>
+        </div>
+      </div>
 
-        {/* Top cards */}
-        <div style={cardsRow}>
-          <div style={card}>
-            <h4 style={cardTitle}>Employees</h4>
-            <p style={bigNumber}>{employees.total}</p>
-            <p style={smallLine}>Active: {employees.active}</p>
-            <p style={smallLine}>Inactive: {employees.inactive}</p>
-            <p style={smallLine}>
-              Joined last 30 days: {employees.newLast30Days}
-            </p>
-          </div>
+      {/* Stat Cards */}
+      <div className="grid-4" style={{ marginBottom: 24 }}>
+        <StatCard
+          icon={Users}
+          label="Total Employees"
+          value={employees.total}
+          sub={`${employees.active} active`}
+          color="#7c6cf7"
+        />
+        <StatCard
+          icon={Briefcase}
+          label="Projects"
+          value={projects.total}
+          sub={`${projects.active} active`}
+          color="#22c55e"
+        />
+        <StatCard
+          icon={CheckSquare}
+          label="Tasks"
+          value={tasks.total}
+          sub={`${tasks.done} completed`}
+          color="#38bdf8"
+        />
+        <StatCard
+          icon={TrendingUp}
+          label="Overdue Tasks"
+          value={tasks.overdue}
+          sub="Needs attention"
+          color="#f43f5e"
+        />
+      </div>
 
-          <div style={card}>
-            <h4 style={cardTitle}>Projects</h4>
-            <p style={bigNumber}>{projects.total}</p>
-            <p style={smallLine}>Active: {projects.active}</p>
-            <p style={smallLine}>Completed: {projects.completed}</p>
-            <p style={smallLine}>Other: {projects.other}</p>
+      {/* Charts row */}
+      <div className="grid-2">
+        {/* Task status bar chart */}
+        <div className="card card-pad">
+          <div
+            style={{
+              fontSize: 14,
+              fontWeight: 700,
+              color: "var(--text-main)",
+              marginBottom: 20,
+            }}
+          >
+            Task Status Breakdown
           </div>
-
-          <div style={card}>
-            <h4 style={cardTitle}>Tasks</h4>
-            <p style={bigNumber}>{tasks.total}</p>
-            <p style={smallLine}>To do: {tasks.todo}</p>
-            <p style={smallLine}>In progress: {tasks.in_progress}</p>
-            <p style={smallLine}>Done: {tasks.done}</p>
-          </div>
-
-          <div style={card}>
-            <h4 style={cardTitle}>Tasks health</h4>
-            <p style={bigNumber}>{tasks.overdue}</p>
-            <p style={smallLine}>Overdue tasks</p>
-            <p style={smallLine}>
-              Due next 7 days: {tasks.due_next_7_days}
-            </p>
-          </div>
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={taskStatusData} barCategoryGap="35%">
+              <CartesianGrid vertical={false} stroke="var(--border)" />
+              <XAxis
+                dataKey="name"
+                tick={{ fontSize: 12, fill: "var(--text-muted)" }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis
+                tick={{ fontSize: 12, fill: "var(--text-muted)" }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <Tooltip
+                content={<CustomTooltip />}
+                cursor={{ fill: "var(--bg-hover)" }}
+              />
+              <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                {taskStatusData.map((_, i) => (
+                  <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
         </div>
 
-        {/* Bar chart */}
-        <div style={chartCard}>
-          <h3 style={chartTitle}>Task status overview</h3>
-          <div style={{ width: "100%", height: 260 }}>
-            <ResponsiveContainer>
-              <BarChart data={taskStatusData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="name" />
-                <YAxis allowDecimals={false} />
-                <Tooltip />
-                <Bar
-                  dataKey="value"
-                  fill="#2563eb"
-                  radius={[4, 4, 0, 0]}
-                  barSize={32}
-                />
-              </BarChart>
-            </ResponsiveContainer>
+        {/* Employee breakdown */}
+        <div className="card card-pad">
+          <div
+            style={{
+              fontSize: 14,
+              fontWeight: 700,
+              color: "var(--text-main)",
+              marginBottom: 20,
+            }}
+          >
+            Employee Breakdown
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {[
+              { label: "Active", value: employees.active, color: "#22c55e" },
+              {
+                label: "On Leave",
+                value: employees.onLeave ?? 0,
+                color: "#f59e0b",
+              },
+              {
+                label: "Inactive",
+                value: employees.inactive ?? 0,
+                color: "#f43f5e",
+              },
+            ].map(({ label, value, color }) => {
+              const pct = employees.total
+                ? Math.round((value / employees.total) * 100)
+                : 0;
+              return (
+                <div key={label}>
+                  <div
+                    className="flex items-center justify-between"
+                    style={{ marginBottom: 5 }}
+                  >
+                    <span style={{ fontSize: 13, color: "var(--text-sub)" }}>
+                      {label}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: "var(--text-main)",
+                      }}
+                    >
+                      {value}
+                    </span>
+                  </div>
+                  <div
+                    style={{
+                      height: 6,
+                      borderRadius: 999,
+                      background: "var(--border)",
+                    }}
+                  >
+                    <div
+                      style={{
+                        height: 6,
+                        borderRadius: 999,
+                        background: color,
+                        width: `${pct}%`,
+                        transition: "width 0.6s ease",
+                      }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Project summary */}
+          <div style={{ marginTop: 28 }}>
+            <div
+              style={{
+                fontSize: 14,
+                fontWeight: 700,
+                color: "var(--text-main)",
+                marginBottom: 14,
+              }}
+            >
+              Projects
+            </div>
+            <div className="grid-2" style={{ gap: 10 }}>
+              {[
+                {
+                  label: "Total",
+                  value: projects.total,
+                  color: "var(--accent)",
+                },
+                {
+                  label: "Active",
+                  value: projects.active,
+                  color: "var(--success)",
+                },
+                {
+                  label: "Completed",
+                  value: projects.completed,
+                  color: "var(--info)",
+                },
+                {
+                  label: "On Hold",
+                  value: projects.onHold ?? 0,
+                  color: "var(--warning)",
+                },
+              ].map(({ label, value, color }) => (
+                <div
+                  key={label}
+                  style={{
+                    background: "var(--bg-input)",
+                    borderRadius: 10,
+                    padding: "12px 14px",
+                    border: "1px solid var(--border)",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 11,
+                      color: "var(--text-muted)",
+                      fontWeight: 600,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                    }}
+                  >
+                    {label}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 20,
+                      fontWeight: 800,
+                      color,
+                      marginTop: 4,
+                    }}
+                  >
+                    {value}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
     </div>
   );
 }
-
-/* Layout & styles */
-
-const pageBg = {
-  minHeight: "100vh",
-  padding: 24,
-  background: "#0f1017",
-  fontFamily: "'Inter', 'Outfit', sans-serif",
-  color: "#ffffff"
-};
-
-const pageInner = {
-  maxWidth: 1400,
-  margin: "0 auto",
-  display: "flex",
-  flexDirection: "column",
-  gap: 20,
-};
-
-const headerRow = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  padding: "16px 24px",
-  borderRadius: 16,
-  background: "#12131c",
-  border: "1px solid #232533",
-};
-
-const eyebrow = {
-  fontSize: 11,
-  color: "#7c829e",
-  letterSpacing: 1,
-  fontWeight: 600,
-  marginBottom: 4,
-};
-
-const title = {
-  margin: 0,
-  fontSize: 24,
-  color: "#ffffff",
-  letterSpacing: "-0.5px"
-};
-
-const badge = {
-  display: "flex",
-  flexDirection: "column",
-  textAlign: "right"
-};
-
-const glassCard = {
-  background: "#12131c",
-  borderRadius: 16,
-  border: "1px solid #232533",
-  boxShadow: "0 10px 30px rgba(0,0,0,0.2)"
-};
-
-const cardsRow = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
-  gap: 16,
-};
-
-const card = {
-  ...glassCard,
-  padding: 24,
-  color: "#ffffff",
-};
-
-const cardTitle = {
-  margin: "0 0 12px 0",
-  fontSize: 16,
-  fontWeight: 600,
-  color: "#7c829e"
-};
-
-const bigNumber = {
-  margin: "4px 0 12px 0",
-  fontSize: 32,
-  fontWeight: 700,
-  color: "#ffffff"
-};
-
-const smallLine = {
-  margin: "4px 0",
-  fontSize: 13,
-  color: "#7c829e",
-};
-
-const chartCard = {
-  ...glassCard,
-  padding: 24,
-};
-
-const chartTitle = {
-  marginTop: 0,
-  marginBottom: 20,
-  fontSize: 18,
-  color: "#ffffff",
-  fontWeight: 600,
-  letterSpacing: "-0.3px"
-};
