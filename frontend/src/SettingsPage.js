@@ -1,60 +1,142 @@
-// SettingsPage.jsx
+// SettingsPage.js
 import React, { useEffect, useState } from "react";
 import api from "./api";
+import toast from "react-hot-toast";
+import { useTheme } from "./ThemeContext";
+import { User, Bell, Palette, Globe, Save, RotateCcw } from "lucide-react";
+
+const TIMEZONES = [
+  "Asia/Karachi",
+  "Asia/Kolkata",
+  "Asia/Dubai",
+  "Asia/Riyadh",
+  "Europe/London",
+  "America/New_York",
+  "America/Chicago",
+  "America/Los_Angeles",
+  "UTC",
+];
+
+function Section({ icon: Icon, title, children }) {
+  return (
+    <div className="card card-pad" style={{ marginBottom: 20 }}>
+      <div
+        className="flex items-center gap-3"
+        style={{
+          marginBottom: 20,
+          paddingBottom: 16,
+          borderBottom: "1px solid var(--border)",
+        }}
+      >
+        <div
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 10,
+            background: "var(--accent-soft)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Icon size={16} color="var(--accent-strong)" />
+        </div>
+        <h3
+          style={{ fontSize: 15, fontWeight: 700, color: "var(--text-main)" }}
+        >
+          {title}
+        </h3>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function Toggle({ label, description, value, onChange }) {
+  return (
+    <div
+      className="flex items-center justify-between"
+      style={{ padding: "12px 0", borderBottom: "1px solid var(--border)" }}
+    >
+      <div>
+        <div
+          style={{ fontSize: 14, fontWeight: 500, color: "var(--text-main)" }}
+        >
+          {label}
+        </div>
+        {description && (
+          <div
+            style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}
+          >
+            {description}
+          </div>
+        )}
+      </div>
+      <button
+        type="button"
+        onClick={() => onChange(!value)}
+        style={{
+          width: 44,
+          height: 24,
+          borderRadius: 999,
+          border: "none",
+          cursor: "pointer",
+          background: value ? "var(--accent)" : "var(--border-strong)",
+          position: "relative",
+          transition: "background 0.2s ease",
+          flexShrink: 0,
+        }}
+      >
+        <span
+          style={{
+            position: "absolute",
+            top: 3,
+            left: value ? 23 : 3,
+            width: 18,
+            height: 18,
+            borderRadius: "50%",
+            background: "#fff",
+            transition: "left 0.2s ease",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.3)",
+          }}
+        />
+      </button>
+    </div>
+  );
+}
 
 export default function SettingsPage() {
+  const { theme, toggleTheme } = useTheme();
   const [name, setName] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [timeZone, setTimeZone] = useState("Asia/Karachi");
-  const [theme, setTheme] = useState("system");
   const [emailUpdates, setEmailUpdates] = useState(true);
   const [taskReminders, setTaskReminders] = useState(true);
   const [securityAlerts, setSecurityAlerts] = useState(true);
-
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-  const [savedAt, setSavedAt] = useState(null);
-
-  // keep a snapshot of last loaded/saved settings
   const [initialSettings, setInitialSettings] = useState(null);
 
-  // Load settings from backend
   useEffect(() => {
-    const loadSettings = async () => {
-      setLoading(true);
-      setError("");
-      try {
-        const res = await api.get("/me/settings");
+    api
+      .get("/me/settings")
+      .then((res) => {
         const s = res.data || {};
-
         setName(s.name || "");
         setJobTitle(s.jobTitle || "");
         setTimeZone(s.timeZone || "Asia/Karachi");
-        setTheme(s.theme || "system");
         setEmailUpdates(Boolean(s.emailUpdates ?? true));
         setTaskReminders(Boolean(s.taskReminders ?? true));
         setSecurityAlerts(Boolean(s.securityAlerts ?? true));
-
-        // store snapshot for Reset
         setInitialSettings(s);
-      } catch (err) {
-        console.error("Error loading settings:", err);
-        setError(
-          err.response?.data?.error || "Could not load your settings."
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadSettings();
+      })
+      .catch(() => toast.error("Could not load settings."))
+      .finally(() => setLoading(false));
   }, []);
 
   const handleSave = async (e) => {
     e.preventDefault();
     setSaving(true);
-    setError("");
-    setSavedAt(null);
     try {
       const payload = {
         name,
@@ -66,507 +148,159 @@ export default function SettingsPage() {
         securityAlerts,
       };
       await api.put("/me/settings", payload);
-
-      // update snapshot to these saved values
       setInitialSettings(payload);
-      setSavedAt(new Date());
-    } catch (err) {
-      console.error("Error saving settings:", err);
-      setError(
-        err.response?.data?.error || "Could not save your settings."
-      );
+      toast.success("Settings saved.");
+    } catch {
+      toast.error("Could not save settings.");
     } finally {
       setSaving(false);
     }
   };
 
   const handleReset = () => {
-    // Reset to last loaded/saved values without refetching
     if (!initialSettings) return;
-
     setName(initialSettings.name || "");
     setJobTitle(initialSettings.jobTitle || "");
     setTimeZone(initialSettings.timeZone || "Asia/Karachi");
-    setTheme(initialSettings.theme || "system");
     setEmailUpdates(Boolean(initialSettings.emailUpdates ?? true));
     setTaskReminders(Boolean(initialSettings.taskReminders ?? true));
     setSecurityAlerts(Boolean(initialSettings.securityAlerts ?? true));
-    setSavedAt(null);
-    setError("");
+    toast("Changes discarded.", { icon: "↩️" });
   };
 
+  if (loading) {
+    return (
+      <div className="page-body">
+        {[...Array(3)].map((_, i) => (
+          <div
+            key={i}
+            className="skeleton"
+            style={{ height: 160, borderRadius: 20, marginBottom: 20 }}
+          />
+        ))}
+      </div>
+    );
+  }
+
   return (
-    <div style={wrapper}>
-      <div style={card}>
-        <div style={headerRow}>
-          <div>
-            <h2 style={title}>Settings</h2>
-            <p style={subtitle}>
-              Update your personal profile, appearance, and notification
-              preferences.
-            </p>
-          </div>
-          <div style={{ textAlign: "right" }}>
-            {loading && (
-              <span style={{ fontSize: 11, color: "#6b7280" }}>
-                Loading settings…
-              </span>
-            )}
-            {savedAt && !loading && !error && (
-              <span style={{ fontSize: 11, color: "#16a34a" }}>
-                Saved at{" "}
-                {savedAt.toLocaleTimeString(undefined, {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </span>
-            )}
-          </div>
+    <div className="page-body" style={{ maxWidth: 640 }}>
+      <div className="page-header">
+        <div>
+          <h2 className="page-title">Settings</h2>
+          <p className="page-subtitle">Manage your profile and preferences</p>
         </div>
+      </div>
 
-        {error && (
-          <div style={errorBox}>
-            <span>{error}</span>
-          </div>
-        )}
-
-        <form onSubmit={handleSave}>
-          {/* Profile section */}
-          <section style={section}>
-            <h3 style={sectionTitle}>Profile</h3>
-            <p style={sectionHint}>
-              Basic information that will be visible across FlowNest.
-            </p>
-            <div style={grid2}>
-              <Field
-                label="Full name"
+      <form onSubmit={handleSave}>
+        {/* Profile */}
+        <Section icon={User} title="Profile">
+          <div className="grid-2" style={{ gap: 16 }}>
+            <div>
+              <label className="form-label">Display Name</label>
+              <input
+                className="form-input"
                 value={name}
-                onChange={setName}
+                onChange={(e) => setName(e.target.value)}
                 placeholder="Your name"
-                disabled={loading || saving}
               />
-              <Field
-                label="Job title"
+            </div>
+            <div>
+              <label className="form-label">Job Title</label>
+              <input
+                className="form-input"
                 value={jobTitle}
-                onChange={setJobTitle}
-                placeholder="e.g. Product Manager"
-                disabled={loading || saving}
+                onChange={(e) => setJobTitle(e.target.value)}
+                placeholder="e.g. Software Engineer"
               />
             </div>
-            <div style={{ marginTop: 10 }}>
-              <Field
-                label="Time zone"
-                as="select"
-                value={timeZone}
-                onChange={setTimeZone}
-                disabled={loading || saving}
-              >
-                <option value="Asia/Karachi">Asia / Karachi</option>
-                <option value="UTC">UTC</option>
-                <option value="Europe/London">Europe / London</option>
-                <option value="America/New_York">America / New York</option>
-              </Field>
-            </div>
-          </section>
-
-          <div style={divider} />
-
-          {/* Appearance section */}
-          <section style={section}>
-            <h3 style={sectionTitle}>Appearance</h3>
-            <p style={sectionHint}>
-              Choose how FlowNest looks on your device.
-            </p>
-            <div style={radioRow}>
-              <RadioCard
-                label="System"
-                description="Match your OS preference."
-                value="system"
-                current={theme}
-                onChange={setTheme}
-                disabled={loading || saving}
-              />
-              <RadioCard
-                label="Light"
-                description="Light background with dark text."
-                value="light"
-                current={theme}
-                onChange={setTheme}
-                disabled={loading || saving}
-              />
-              <RadioCard
-                label="Dark"
-                description="Best for low‑light environments."
-                value="dark"
-                current={theme}
-                onChange={setTheme}
-                disabled={loading || saving}
-              />
-            </div>
-          </section>
-
-          <div style={divider} />
-
-          {/* Notifications section */}
-          <section style={section}>
-            <h3 style={sectionTitle}>Notifications</h3>
-            <p style={sectionHint}>
-              Decide when FlowNest should send you updates.
-            </p>
-            <ToggleRow
-              label="Email updates"
-              description="Receive summaries about projects and tasks."
-              checked={emailUpdates}
-              onChange={setEmailUpdates}
-              disabled={loading || saving}
-            />
-            <ToggleRow
-              label="Task reminders"
-              description="Get reminders for upcoming and overdue tasks."
-              checked={taskReminders}
-              onChange={setTaskReminders}
-              disabled={loading || saving}
-            />
-            <ToggleRow
-              label="Security alerts"
-              description="Alerts for sign‑ins and account‑level changes."
-              checked={securityAlerts}
-              onChange={setSecurityAlerts}
-              disabled={loading || saving}
-            />
-          </section>
-
-          <div style={footerRow}>
-            <button
-              type="button"
-              onClick={handleReset}
-              style={secondaryButton}
-              disabled={loading || saving}
-            >
-              Reset
-            </button>
-            <button
-              type="submit"
-              style={primaryButton}
-              disabled={loading || saving}
-            >
-              {saving ? "Saving…" : "Save settings"}
-            </button>
           </div>
-        </form>
-      </div>
+        </Section>
+
+        {/* Appearance */}
+        <Section icon={Palette} title="Appearance">
+          <div style={{ display: "flex", gap: 12 }}>
+            {["dark", "light"].map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => {
+                  if (theme !== t) toggleTheme();
+                }}
+                style={{
+                  flex: 1,
+                  padding: "14px 0",
+                  borderRadius: 12,
+                  cursor: "pointer",
+                  border: `2px solid ${theme === t ? "var(--accent)" : "var(--border)"}`,
+                  background: t === "dark" ? "#12131e" : "#f4f5fb",
+                  color: t === "dark" ? "#f0f1ff" : "#0f1020",
+                  fontWeight: 600,
+                  fontSize: 14,
+                  transition: "all 0.2s ease",
+                  boxShadow:
+                    theme === t ? "0 0 0 3px var(--accent-soft)" : "none",
+                }}
+              >
+                {t === "dark" ? "🌙 Dark" : "☀️ Light"}
+              </button>
+            ))}
+          </div>
+        </Section>
+
+        {/* Timezone */}
+        <Section icon={Globe} title="Regional">
+          <div>
+            <label className="form-label">Timezone</label>
+            <select
+              className="form-input"
+              value={timeZone}
+              onChange={(e) => setTimeZone(e.target.value)}
+            >
+              {TIMEZONES.map((tz) => (
+                <option key={tz} value={tz}>
+                  {tz}
+                </option>
+              ))}
+            </select>
+          </div>
+        </Section>
+
+        {/* Notifications */}
+        <Section icon={Bell} title="Notifications">
+          <Toggle
+            label="Email Updates"
+            description="Receive weekly HR emails"
+            value={emailUpdates}
+            onChange={setEmailUpdates}
+          />
+          <Toggle
+            label="Task Reminders"
+            description="Get reminders for due tasks"
+            value={taskReminders}
+            onChange={setTaskReminders}
+          />
+          <Toggle
+            label="Security Alerts"
+            description="Alert me about account login activity"
+            value={securityAlerts}
+            onChange={setSecurityAlerts}
+          />
+        </Section>
+
+        {/* Actions */}
+        <div className="flex gap-3">
+          <button type="submit" className="btn btn-primary" disabled={saving}>
+            <Save size={15} /> {saving ? "Saving…" : "Save Settings"}
+          </button>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={handleReset}
+          >
+            <RotateCcw size={15} /> Reset
+          </button>
+        </div>
+      </form>
     </div>
   );
 }
-
-/* Small presentational components */
-
-function Field({
-  label,
-  value,
-  onChange,
-  placeholder,
-  as = "input",
-  children,
-  disabled,
-}) {
-  return (
-    <div style={fieldCol}>
-      <label style={fieldLabel}>{label}</label>
-      {as === "select" ? (
-        <select
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          style={input}
-          disabled={disabled}
-        >
-          {children}
-        </select>
-      ) : (
-        <input
-          type="text"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          style={input}
-          disabled={disabled}
-        />
-      )}
-    </div>
-  );
-}
-
-function RadioCard({
-  label,
-  description,
-  value,
-  current,
-  onChange,
-  disabled,
-}) {
-  const active = current === value;
-  return (
-    <button
-      type="button"
-      onClick={() => !disabled && onChange(value)}
-      style={{
-        ...radioCard,
-        borderColor: active ? "#2563eb" : "#e5e7eb",
-        boxShadow: active
-          ? "0 0 0 1px rgba(37,99,235,0.4)"
-          : "0 1px 2px rgba(15,23,42,0.1)",
-        opacity: disabled ? 0.6 : 1,
-        cursor: disabled ? "default" : "pointer",
-      }}
-    >
-      <div style={radioCircleOuter}>
-        <div
-          style={{
-            ...radioCircleInner,
-            opacity: active ? 1 : 0,
-          }}
-        />
-      </div>
-      <div>
-        <div style={radioLabel}>{label}</div>
-        <div style={radioDescription}>{description}</div>
-      </div>
-    </button>
-  );
-}
-
-function ToggleRow({ label, description, checked, onChange, disabled }) {
-  return (
-    <div style={toggleRow}>
-      <div>
-        <div style={toggleLabel}>{label}</div>
-        <div style={toggleDescription}>{description}</div>
-      </div>
-      <button
-        type="button"
-        onClick={() => !disabled && onChange(!checked)}
-        style={{
-          ...toggleSwitch,
-          background: checked ? "#22c55e" : "#e5e7eb",
-          justifyContent: checked ? "flex-end" : "flex-start",
-          opacity: disabled ? 0.6 : 1,
-          cursor: disabled ? "default" : "pointer",
-        }}
-      >
-        <div style={toggleKnob} />
-      </button>
-    </div>
-  );
-}
-
-/* Styles – Dark Theme */
-
-const wrapper = { maxWidth: 800, margin: "0 auto", minHeight: "100vh", padding: 24, background: "#0f1017" };
-
-const card = {
-  background: "#12131c",
-  borderRadius: 24,
-  border: "1px solid #232533",
-  boxShadow: "0 18px 48px rgba(0, 0, 0, 0.32)",
-  padding: 22,
-  color: "#ffffff",
-};
-
-const headerRow = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "flex-start",
-  gap: 12,
-};
-
-const title = {
-  marginTop: 0,
-  marginBottom: 4,
-  fontSize: 20,
-  color: "#ffffff",
-};
-
-const subtitle = {
-  marginTop: 0,
-  marginBottom: 8,
-  fontSize: 13,
-  color: "#7c829e",
-};
-
-const errorBox = {
-  marginTop: 8,
-  marginBottom: 8,
-  padding: 8,
-  borderRadius: 8,
-  background: "rgba(242, 109, 125, 0.1)",
-  border: "1px solid rgba(242, 109, 125, 0.3)",
-  color: "#f26d7d",
-  fontSize: 12,
-};
-
-const section = { marginTop: 8 };
-
-const sectionTitle = {
-  margin: "0 0 2px 0",
-  fontSize: 14,
-  fontWeight: 600,
-  color: "#ffffff",
-};
-
-const sectionHint = {
-  margin: "0 0 10px 0",
-  fontSize: 12,
-  color: "#7c829e",
-};
-
-const divider = {
-  marginTop: 16,
-  marginBottom: 8,
-  height: 1,
-  background: "#232533",
-};
-
-const grid2 = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
-  gap: 12,
-};
-
-const fieldCol = {
-  display: "flex",
-  flexDirection: "column",
-  gap: 4,
-};
-
-const fieldLabel = {
-  fontSize: 11,
-  color: "#7c829e",
-  fontWeight: 600,
-};
-
-const input = {
-  padding: "10px 14px",
-  borderRadius: 8,
-  border: "1px solid #323546",
-  fontSize: 13,
-  background: "#1a1b26",
-  color: "#ffffff",
-  outline: "none",
-  boxSizing: "border-box",
-  width: "100%",
-};
-
-const radioRow = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))",
-  gap: 10,
-  marginTop: 8,
-};
-
-const radioCard = {
-  display: "flex",
-  alignItems: "flex-start",
-  gap: 10,
-  padding: 10,
-  borderRadius: 16,
-  border: "1px solid #323546",
-  background: "#1a1b26",
-  color: "#ffffff",
-};
-
-const radioCircleOuter = {
-  width: 18,
-  height: 18,
-  borderRadius: "999px",
-  border: "1px solid #7c829e",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  marginTop: 2,
-};
-
-const radioCircleInner = {
-  width: 10,
-  height: 10,
-  borderRadius: "999px",
-  background: "#ffffff",
-  transition: "opacity 0.15s ease-out",
-};
-
-const radioLabel = {
-  fontSize: 13,
-  fontWeight: 600,
-  color: "#ffffff",
-};
-
-const radioDescription = {
-  fontSize: 11,
-  color: "#7c829e",
-};
-
-const toggleRow = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  marginTop: 10,
-};
-
-const toggleLabel = {
-  fontSize: 13,
-  fontWeight: 500,
-  color: "#ffffff",
-};
-
-const toggleDescription = {
-  fontSize: 11,
-  color: "#7c829e",
-};
-
-const toggleSwitch = {
-  "--accent": "#4f46e5",
-  width: 38,
-  height: 20,
-  borderRadius: 999,
-  border: "none",
-  padding: 2,
-  display: "flex",
-  alignItems: "center",
-};
-
-const toggleKnob = {
-  width: 16,
-  height: 16,
-  borderRadius: "50%",
-  background: "#ffffff",
-  boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
-};
-
-const footerRow = {
-  marginTop: 18,
-  display: "flex",
-  justifyContent: "flex-end",
-  gap: 8,
-};
-
-const primaryButton = {
-  padding: "10px 20px",
-  borderRadius: 8,
-  border: "none",
-  background: "#ffffff",
-  color: "#0f1017",
-  fontWeight: 600,
-  fontSize: 13,
-  cursor: "pointer",
-  transition: "all 0.2s ease",
-};
-
-const secondaryButton = {
-  padding: "10px 16px",
-  borderRadius: 8,
-  border: "1px solid #323546",
-  background: "transparent",
-  color: "#ffffff",
-  fontSize: 12,
-  cursor: "pointer",
-  transition: "all 0.2s ease",
-};

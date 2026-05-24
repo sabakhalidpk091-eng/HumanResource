@@ -1,599 +1,574 @@
 // UsersPage.jsx
-import React, { useEffect, useState } from "react";
+// Admin-only page to create and manage user accounts.
+// This is the ONLY place new users can be created after first setup.
+import React, { useEffect, useState, useCallback } from "react";
 import api from "./api";
+import toast from "react-hot-toast";
+import { useAuth } from "./AuthContext";
+import {
+  Plus,
+  X,
+  Link2,
+  Trash2,
+  Shield,
+  User,
+  Eye,
+  EyeOff,
+  RefreshCw,
+} from "lucide-react";
+
+const ROLES = ["Employee", "HR", "ProjectManager", "Admin"];
+
+const EMPTY_FORM = {
+  username: "",
+  email: "",
+  password: "",
+  role: "Employee",
+  linkedEmployeeId: "",
+};
+
+const ROLE_COLORS = {
+  Admin: "badge-accent",
+  HR: "badge-info",
+  ProjectManager: "badge-warning",
+  Employee: "badge-muted",
+};
 
 export default function UsersPage() {
+  const { user: currentUser } = useAuth();
+  const isAdmin = currentUser?.role === "Admin";
+
   const [users, setUsers] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [savingId, setSavingId] = useState(null);
-  const [editLinks, setEditLinks] = useState({}); // { [userId]: linkedEmployeeId }
-
-  const [newUser, setNewUser] = useState({
-    username: "",
-    email: "",
-    password: "",
-    role: "Employee",
-    linkedEmployeeId: "",
-  });
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState(EMPTY_FORM);
   const [creating, setCreating] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
-  const loadData = async () => {
+  // Per-row link editing
+  const [editLinks, setEditLinks] = useState({});
+  const [savingLink, setSavingLink] = useState(null);
+
+  const loadData = useCallback(async () => {
     setLoading(true);
-    setError("");
     try {
-      const [usersRes, empRes] = await Promise.all([
+      const [uRes, eRes] = await Promise.all([
         api.get("/users"),
-        api.get("/employees"),
+        api.get("/employees", { params: { pageSize: 200 } }),
       ]);
+      const userArr = uRes.data || [];
+      setUsers(userArr);
 
-      const userArray = usersRes.data || [];
-      setUsers(userArray);
+      const empArr = Array.isArray(eRes.data)
+        ? eRes.data
+        : eRes.data?.data || [];
+      setEmployees(empArr);
 
-      const empPayload = empRes.data;
-      const empArray = Array.isArray(empPayload)
-        ? empPayload
-        : Array.isArray(empPayload?.data)
-          ? empPayload.data
-          : [];
-      setEmployees(empArray);
-
-      const initial = {};
-      userArray.forEach((u) => {
-        initial[u.id] =
+      // initialise link dropdowns
+      const links = {};
+      userArr.forEach((u) => {
+        links[u.id] =
           u.linkedEmployeeId != null ? String(u.linkedEmployeeId) : "";
       });
-      setEditLinks(initial);
-    } catch (err) {
-      console.error("Users/employees load error:", err);
-      setError(
-        err.response?.data?.error || "Could not load users or employees."
-      );
+      setEditLinks(links);
+    } catch {
+      toast.error("Could not load users.");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
-  const handleLinkChange = (userId, value) => {
-    setEditLinks((prev) => ({
-      ...prev,
-      [userId]: value,
-    }));
-  };
-
-  const handleSaveLink = async (userId) => {
-    const value = editLinks[userId] ?? "";
-    setSavingId(userId);
-    try {
-      await api.put(`/users/${userId}/link-employee`, {
-        linkedEmployeeId: value === "" ? null : Number(value),
-      });
-      await loadData();
-    } catch (err) {
-      console.error("Save link error:", err);
-      alert(
-        err.response?.data?.error ||
-        "Could not update user link. Check console for details."
-      );
-    } finally {
-      setSavingId(null);
-    }
-  };
-
-  const handleNewUserChange = (field, value) => {
-    setNewUser((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleCreateUser = async (e) => {
+  // ── CREATE USER ───────────────────────────────────────────────
+  const handleCreate = async (e) => {
     e.preventDefault();
+    if (form.password.length < 8) {
+      toast.error("Password must be at least 8 characters.");
+      return;
+    }
     setCreating(true);
     try {
-      const payload = {
-        username: newUser.username,
-        email: newUser.email,
-        password: newUser.password,
-        role: newUser.role,
-        linkedEmployeeId: newUser.linkedEmployeeId
-          ? Number(newUser.linkedEmployeeId)
+      await api.post("/auth/register", {
+        username: form.username,
+        email: form.email,
+        password: form.password,
+        role: form.role,
+        linkedEmployeeId: form.linkedEmployeeId
+          ? Number(form.linkedEmployeeId)
           : undefined,
-      };
-
-      await api.post("/auth/register", payload);
-
-      setNewUser({
-        username: "",
-        email: "",
-        password: "",
-        role: "Employee",
-        linkedEmployeeId: "",
       });
-
+      toast.success(`User "${form.username}" created.`);
+      setForm(EMPTY_FORM);
+      setShowForm(false);
       await loadData();
     } catch (err) {
-      console.error("Create user error:", err);
-      alert(
-        err.response?.data?.error ||
-        "Could not create user. Check console for details."
+      toast.error(
+        err.response?.data?.detail ||
+          err.response?.data?.error ||
+          "Could not create user.",
       );
     } finally {
       setCreating(false);
     }
   };
 
-  return (
-    <div style={pageBg}>
-      <div style={pageInner}>
-        <header style={headerRow}>
-          <div>
-            <div style={eyebrow}>ACCESS CONTROL</div>
-            <h2 style={title}>Users</h2>
-          </div>
-          <div style={badge}>
-            <span style={{ fontSize: 11, color: "#6b7280" }}>Total</span>
-            <span style={{ fontSize: 16, fontWeight: 600 }}>
-              {users.length}
-            </span>
-          </div>
-        </header>
+  // ── LINK EMPLOYEE ─────────────────────────────────────────────
+  const handleSaveLink = async (userId) => {
+    setSavingLink(userId);
+    try {
+      const val = editLinks[userId] ?? "";
+      await api.put(`/users/${userId}/link-employee`, {
+        linkedEmployeeId: val === "" ? null : Number(val),
+      });
+      toast.success("Employee link updated.");
+      await loadData();
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Could not update link.");
+    } finally {
+      setSavingLink(null);
+    }
+  };
 
-        {/* Create user form */}
-        <form onSubmit={handleCreateUser} style={createFormCard}>
-          <h3 style={{ marginTop: 0, marginBottom: 8, fontSize: 16 }}>
-            Add new user
-          </h3>
-          <p
-            style={{
-              marginTop: 0,
-              marginBottom: 12,
-              fontSize: 12,
-              color: "#6b7280",
+  // ── DELETE USER ───────────────────────────────────────────────
+  const handleDelete = async (u) => {
+    if (u.id === currentUser?.id) {
+      toast.error("You cannot delete your own account.");
+      return;
+    }
+    if (!window.confirm(`Delete user "${u.username}"? This cannot be undone.`))
+      return;
+    try {
+      await api.delete(`/users/${u.id}`);
+      toast.success("User deleted.");
+      await loadData();
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Could not delete user.");
+    }
+  };
+
+  // ── GENERATE PASSWORD ─────────────────────────────────────────
+  const generatePassword = () => {
+    const chars =
+      "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$";
+    const pwd = Array.from(
+      { length: 12 },
+      () => chars[Math.floor(Math.random() * chars.length)],
+    ).join("");
+    setForm((p) => ({ ...p, password: pwd }));
+    setShowPassword(true);
+    toast.success("Password generated — make sure to share it securely.");
+  };
+
+  return (
+    <div className="page-body">
+      {/* Header */}
+      <div className="page-header">
+        <div>
+          <h2 className="page-title">Users</h2>
+          <p className="page-subtitle">
+            {users.length} accounts · All user creation is admin-controlled
+          </p>
+        </div>
+        {isAdmin && (
+          <button
+            className="btn btn-primary"
+            onClick={() => {
+              setShowForm(true);
+              setForm(EMPTY_FORM);
             }}
           >
-            Create a login account and optionally link it to an existing
-            employee.
-          </p>
-
-          <div style={createFormGrid}>
-            <div style={fieldCol}>
-              <label style={fieldLabel}>Username</label>
-              <input
-                type="text"
-                value={newUser.username}
-                onChange={(e) =>
-                  handleNewUserChange("username", e.target.value)
-                }
-                required
-                style={input}
-              />
-            </div>
-
-            <div style={fieldCol}>
-              <label style={fieldLabel}>Email</label>
-              <input
-                type="email"
-                value={newUser.email}
-                onChange={(e) =>
-                  handleNewUserChange("email", e.target.value)
-                }
-                required
-                style={input}
-              />
-            </div>
-
-            <div style={fieldCol}>
-              <label style={fieldLabel}>Password</label>
-              <input
-                type="password"
-                value={newUser.password}
-                onChange={(e) =>
-                  handleNewUserChange("password", e.target.value)
-                }
-                required
-                style={input}
-              />
-            </div>
-
-            <div style={fieldCol}>
-              <label style={fieldLabel}>Role</label>
-              <select
-                value={newUser.role}
-                onChange={(e) =>
-                  handleNewUserChange("role", e.target.value)
-                }
-                style={input}
-              >
-                <option value="Admin">Admin</option>
-                <option value="HR">HR</option>
-                <option value="ProjectManager">ProjectManager</option>
-                <option value="Employee">Employee</option>
-              </select>
-            </div>
-
-            <div style={fieldCol}>
-              <label style={fieldLabel}>Linked employee (optional)</label>
-              <select
-                value={newUser.linkedEmployeeId}
-                onChange={(e) =>
-                  handleNewUserChange("linkedEmployeeId", e.target.value)
-                }
-                style={input}
-              >
-                <option value="">— No employee linked —</option>
-                {employees.map((emp) => (
-                  <option key={emp.id} value={emp.id}>
-                    {emp.name} (ID: {emp.id})
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div style={{ marginTop: 12, textAlign: "right" }}>
-            <button
-              type="submit"
-              disabled={creating}
-              style={createButton(creating)}
-            >
-              {creating ? "Creating..." : "Create user"}
-            </button>
-          </div>
-        </form>
-
-        {loading && <p style={infoText}>Loading users...</p>}
-        {error && <p style={errorText}>{error}</p>}
-
-        {!loading && !error && (
-          <div style={tableCard}>
-            <div style={tableScroller}>
-              <table style={table}>
-                <thead>
-                  <tr>
-                    <th style={th}>ID</th>
-                    <th style={th}>Username</th>
-                    <th style={th}>Email</th>
-                    <th style={th}>Role</th>
-                    <th style={th}>Linked employee</th>
-                    <th style={th}>Link employee</th>
-                    <th style={th}>Created at</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map((u) => (
-                    <tr key={u.id}>
-                      <td style={td}>{u.id}</td>
-                      <td style={td}>{u.username}</td>
-                      <td style={td}>{u.email}</td>
-                      <td style={td}>
-                        <span style={rolePill(u.role)}>{u.role}</span>
-                      </td>
-                      <td style={td}>{u.linkedEmployeeId ?? "-"}</td>
-                      <td style={td}>
-                        <div style={linkRow}>
-                          <select
-                            value={editLinks[u.id] ?? ""}
-                            onChange={(e) =>
-                              handleLinkChange(u.id, e.target.value)
-                            }
-                            style={selectInput}
-                          >
-                            <option value="">
-                              — No employee linked —
-                            </option>
-                            {employees.map((emp) => (
-                              <option key={emp.id} value={emp.id}>
-                                {emp.name} (ID: {emp.id})
-                              </option>
-                            ))}
-                          </select>
-                          <button
-                            type="button"
-                            onClick={() => handleSaveLink(u.id)}
-                            disabled={savingId === u.id}
-                            style={saveButton(savingId === u.id)}
-                          >
-                            {savingId === u.id ? "Saving..." : "Save link"}
-                          </button>
-                        </div>
-                      </td>
-                      <td style={td}>
-                        {u.createdAt
-                          ? new Date(u.createdAt).toLocaleString()
-                          : "-"}
-                      </td>
-                    </tr>
-                  ))}
-                  {users.length === 0 && (
-                    <tr>
-                      <td style={td} colSpan={7}>
-                        No users found.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+            <Plus size={15} /> Create User
+          </button>
         )}
       </div>
+
+      {/* ── Create User Form ── */}
+      {showForm && isAdmin && (
+        <div className="card card-pad" style={{ marginBottom: 24 }}>
+          <div
+            className="flex items-center justify-between"
+            style={{ marginBottom: 20 }}
+          >
+            <div>
+              <h3
+                style={{
+                  fontSize: 15,
+                  fontWeight: 700,
+                  color: "var(--text-main)",
+                }}
+              >
+                Create New User
+              </h3>
+              <p
+                style={{
+                  fontSize: 12,
+                  color: "var(--text-muted)",
+                  marginTop: 3,
+                }}
+              >
+                The user will receive their credentials from you directly.
+              </p>
+            </div>
+            <button
+              className="btn btn-secondary btn-sm btn-icon"
+              onClick={() => setShowForm(false)}
+            >
+              <X size={15} />
+            </button>
+          </div>
+
+          <form onSubmit={handleCreate}>
+            <div className="grid-2" style={{ gap: 16 }}>
+              <div>
+                <label className="form-label">Username</label>
+                <input
+                  className="form-input"
+                  value={form.username}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, username: e.target.value }))
+                  }
+                  placeholder="e.g. john_doe"
+                  required
+                />
+              </div>
+              <div>
+                <label className="form-label">Email Address</label>
+                <input
+                  className="form-input"
+                  type="email"
+                  value={form.email}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, email: e.target.value }))
+                  }
+                  placeholder="john@company.com"
+                  required
+                />
+              </div>
+              <div>
+                <label className="form-label">Role</label>
+                <select
+                  className="form-input"
+                  value={form.role}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, role: e.target.value }))
+                  }
+                >
+                  {ROLES.map((r) => (
+                    <option key={r} value={r}>
+                      {r}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="form-label">
+                  Link to Employee (optional)
+                </label>
+                <select
+                  className="form-input"
+                  value={form.linkedEmployeeId}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, linkedEmployeeId: e.target.value }))
+                  }
+                >
+                  <option value="">— No employee linked —</option>
+                  {employees
+                    .filter(
+                      (emp) =>
+                        !users.find((u) => u.linkedEmployeeId === emp.id),
+                    )
+                    .map((emp) => (
+                      <option key={emp.id} value={emp.id}>
+                        {emp.name} ({emp.employeeCode})
+                      </option>
+                    ))}
+                </select>
+              </div>
+              <div style={{ gridColumn: "1 / -1" }}>
+                <label className="form-label">Password</label>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <div style={{ position: "relative", flex: 1 }}>
+                    <input
+                      className="form-input"
+                      type={showPassword ? "text" : "password"}
+                      value={form.password}
+                      onChange={(e) =>
+                        setForm((p) => ({ ...p, password: e.target.value }))
+                      }
+                      placeholder="Min 8 characters"
+                      required
+                      style={{ paddingRight: 44 }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((p) => !p)}
+                      style={{
+                        position: "absolute",
+                        right: 12,
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        background: "none",
+                        border: "none",
+                        color: "var(--text-muted)",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={generatePassword}
+                    title="Generate a random password"
+                  >
+                    <RefreshCw size={14} /> Generate
+                  </button>
+                </div>
+                <p
+                  style={{
+                    fontSize: 11,
+                    color: "var(--text-muted)",
+                    marginTop: 5,
+                  }}
+                >
+                  Share this password with the user securely (not over plain
+                  email).
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3" style={{ marginTop: 20 }}>
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={creating}
+              >
+                {creating ? "Creating…" : "Create User Account"}
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setShowForm(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* ── Users Table ── */}
+      <div className="table-wrap">
+        {loading ? (
+          <div
+            style={{
+              padding: 32,
+              display: "flex",
+              flexDirection: "column",
+              gap: 12,
+            }}
+          >
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="skeleton skeleton-text" />
+            ))}
+          </div>
+        ) : users.length === 0 ? (
+          <div
+            style={{
+              padding: 48,
+              textAlign: "center",
+              color: "var(--text-muted)",
+            }}
+          >
+            No users found.
+          </div>
+        ) : (
+          <table>
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Role</th>
+                <th>Linked Employee</th>
+                {isAdmin && <th>Actions</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {users.map((u) => {
+                const linkedEmp = employees.find(
+                  (e) => e.id === u.linkedEmployeeId,
+                );
+                return (
+                  <tr key={u.id}>
+                    <td>
+                      <div className="flex items-center gap-2">
+                        <div
+                          style={{
+                            width: 34,
+                            height: 34,
+                            borderRadius: "50%",
+                            background:
+                              u.id === currentUser?.id
+                                ? "var(--accent)"
+                                : "var(--accent-soft)",
+                            color:
+                              u.id === currentUser?.id
+                                ? "#fff"
+                                : "var(--accent-strong)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: 13,
+                            fontWeight: 700,
+                            flexShrink: 0,
+                          }}
+                        >
+                          {u.username?.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <div
+                            style={{
+                              fontWeight: 600,
+                              color: "var(--text-main)",
+                              fontSize: 13.5,
+                            }}
+                          >
+                            {u.username}
+                            {u.id === currentUser?.id && (
+                              <span
+                                style={{
+                                  marginLeft: 6,
+                                  fontSize: 10,
+                                  color: "var(--accent)",
+                                  fontWeight: 700,
+                                }}
+                              >
+                                YOU
+                              </span>
+                            )}
+                          </div>
+                          <div
+                            style={{ fontSize: 12, color: "var(--text-muted)" }}
+                          >
+                            {u.email}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <span
+                        className={`badge ${ROLE_COLORS[u.role] || "badge-muted"}`}
+                      >
+                        {u.role === "Admin" && <Shield size={10} />}
+                        {u.role}
+                      </span>
+                    </td>
+                    <td>
+                      {isAdmin ? (
+                        <div className="flex items-center gap-2">
+                          <select
+                            className="form-input"
+                            style={{
+                              fontSize: 12,
+                              padding: "6px 10px",
+                              maxWidth: 200,
+                            }}
+                            value={editLinks[u.id] ?? ""}
+                            onChange={(e) =>
+                              setEditLinks((p) => ({
+                                ...p,
+                                [u.id]: e.target.value,
+                              }))
+                            }
+                          >
+                            <option value="">— Not linked —</option>
+                            {employees
+                              .filter(
+                                (e) =>
+                                  !users.find(
+                                    (usr) =>
+                                      usr.id !== u.id &&
+                                      usr.linkedEmployeeId === e.id,
+                                  ),
+                              )
+                              .map((e) => (
+                                <option key={e.id} value={e.id}>
+                                  {e.name} ({e.employeeCode})
+                                </option>
+                              ))}
+                          </select>
+                          <button
+                            className="btn btn-secondary btn-sm btn-icon"
+                            title="Save link"
+                            disabled={savingLink === u.id}
+                            onClick={() => handleSaveLink(u.id)}
+                          >
+                            {savingLink === u.id ? (
+                              <RefreshCw
+                                size={12}
+                                style={{ animation: "spin 1s linear infinite" }}
+                              />
+                            ) : (
+                              <Link2 size={13} />
+                            )}
+                          </button>
+                        </div>
+                      ) : (
+                        <span
+                          style={{
+                            fontSize: 13,
+                            color: linkedEmp
+                              ? "var(--text-main)"
+                              : "var(--text-muted)",
+                          }}
+                        >
+                          {linkedEmp
+                            ? `${linkedEmp.name} (${linkedEmp.employeeCode})`
+                            : "Not linked"}
+                        </span>
+                      )}
+                    </td>
+                    {isAdmin && (
+                      <td>
+                        <button
+                          className="btn btn-danger btn-sm btn-icon"
+                          onClick={() => handleDelete(u)}
+                          disabled={u.id === currentUser?.id}
+                          title={
+                            u.id === currentUser?.id
+                              ? "Cannot delete your own account"
+                              : "Delete user"
+                          }
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </td>
+                    )}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Info note for non-admins */}
+      {!isAdmin && (
+        <p
+          style={{
+            marginTop: 16,
+            fontSize: 12,
+            color: "var(--text-muted)",
+            textAlign: "center",
+          }}
+        >
+          User accounts are managed by Administrators only.
+        </p>
+      )}
     </div>
   );
 }
-
-/* Styles – dark background with light header text, light table card with dark text */
-
-
-/* --- Applied Dark Theme --- */
-const pageBg = {
-  minHeight: "100vh",
-  padding: 24,
-  background: "#0f1017",
-  fontFamily: "'Inter', 'Outfit', sans-serif",
-  color: "#ffffff"
-};
-
-const pageInner = {
-  maxWidth: 1400,
-  margin: "0 auto",
-  display: "flex",
-  flexDirection: "column",
-  gap: 20,
-};
-
-const headerRow = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  padding: "16px 24px",
-  borderRadius: 16,
-  background: "#12131c",
-  border: "1px solid #232533",
-};
-
-const eyebrow = {
-  fontSize: 11,
-  color: "#7c829e",
-  letterSpacing: 1,
-  fontWeight: 600,
-  marginBottom: 4,
-};
-
-const title = {
-  margin: 0,
-  fontSize: 24,
-  color: "#ffffff",
-  letterSpacing: "-0.5px"
-};
-
-const badge = {
-  display: "flex",
-  flexDirection: "column",
-  textAlign: "right"
-};
-
-const glassCard = {
-  background: "#12131c",
-  borderRadius: 16,
-  border: "1px solid #232533",
-  boxShadow: "0 10px 30px rgba(0,0,0,0.2)"
-};
-
-const formCard = {
-  ...glassCard,
-  padding: 24,
-  color: "#ffffff",
-};
-
-const tableCard = {
-  ...glassCard,
-  padding: 24,
-  color: "#ffffff",
-};
-
-const formHeaderRow = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  marginBottom: 20,
-};
-
-const formTitle = {
-  margin: 0,
-  fontSize: 18,
-  fontWeight: 600,
-  letterSpacing: "-0.3px",
-  color: "#ffffff"
-};
-
-const formSubtitle = {
-  margin: 0,
-  fontSize: 13,
-  marginTop: 4,
-  color: "#7c829e",
-};
-
-const formGrid = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
-  gap: 16,
-  marginTop: 10,
-};
-
-const fieldCol = {
-  display: "flex",
-  flexDirection: "column",
-  gap: 8,
-};
-
-const fieldLabel = {
-  fontSize: 11,
-  color: "#7c829e",
-  fontWeight: 600,
-  letterSpacing: "0.05em"
-};
-
-const input = {
-  padding: "12px 14px",
-  borderRadius: 8,
-  border: "1px solid #323546",
-  fontSize: 14,
-  background: "#1a1b26",
-  color: "#ffffff",
-  outline: "none",
-  boxSizing: "border-box",
-  transition: "all 0.2s ease",
-  width: "100%"
-};
-
-const formFooterRow = {
-  marginTop: 24,
-  display: "flex",
-  justifyContent: "flex-end",
-  gap: 12,
-};
-
-const primaryButton = {
-  padding: "12px 24px",
-  borderRadius: 8,
-  border: "none",
-  background: "#ffffff",
-  color: "#0f1017",
-  fontWeight: 600,
-  fontSize: 14,
-  cursor: "pointer",
-  transition: "all 0.2s ease"
-};
-
-const ghostButton = {
-  padding: "12px 24px",
-  borderRadius: 8,
-  border: "1px solid #323546",
-  background: "transparent",
-  color: "#ffffff",
-  fontSize: 14,
-  fontWeight: 600,
-  cursor: "pointer",
-  transition: "all 0.2s ease"
-};
-
-const outlineButton = {
-  padding: "6px 12px",
-  borderRadius: 6,
-  border: "1px solid #6b5ce7",
-  background: "transparent",
-  color: "#a29bfe",
-  fontSize: 12,
-  fontWeight: 500,
-  cursor: "pointer",
-  marginRight: 8,
-};
-
-const dangerButton = {
-  padding: "6px 12px",
-  borderRadius: 6,
-  border: "1px solid #f26d7d",
-  background: "transparent",
-  color: "#ffbec8",
-  fontSize: 12,
-  fontWeight: 500,
-  cursor: "pointer",
-};
-
-const tableScroller = {
-  width: "100%",
-  overflowX: "auto",
-};
-
-const table = {
-  width: "100%",
-  borderCollapse: "collapse",
-  fontSize: 13,
-};
-
-const th = {
-  textAlign: "left",
-  padding: "12px 8px",
-  borderBottom: "1px solid #232533",
-  color: "#7c829e",
-  fontWeight: 600,
-};
-
-const td = {
-  padding: "12px 8px",
-  borderBottom: "1px solid #232533",
-  color: "#ffffff",
-  verticalAlign: "middle"
-};
-
-const infoText = { fontSize: 14, color: "#7c829e" };
-const errorBox = {
-  marginTop: 8,
-  marginBottom: 8,
-  padding: 12,
-  borderRadius: 8,
-  background: "rgba(242, 109, 125, 0.1)",
-  border: "1px solid rgba(242, 109, 125, 0.3)",
-  color: "#f26d7d",
-  fontSize: 13,
-};
-
-const paginationRow = {
-  marginTop: 20,
-  display: "flex",
-  alignItems: "center",
-  gap: 16,
-  justifyContent: "flex-end",
-};
-
-const pageBtn = (disabled) => ({
-  padding: "8px 16px",
-  borderRadius: 8,
-  border: "1px solid #323546",
-  background: disabled ? "transparent" : "#1a1b26",
-  color: disabled ? "#585c78" : "#ffffff",
-  cursor: disabled ? "not-allowed" : "pointer",
-  fontSize: 13,
-  fontWeight: 500
-});
-
-const statusPill = (status) => {
-  let bg = "rgba(124, 108, 247, 0.1)";
-  let color = "#a29bfe";
-  const s = String(status).toLowerCase();
-  
-  if (s.includes("active") || s.includes("hired") || s.includes("approved") || s.includes("present") || s.includes("done")) {
-    bg = "rgba(16, 185, 129, 0.1)";
-    color = "#10b981";
-  } else if (s.includes("inactive") || s.includes("rejected") || s.includes("absent") || s.includes("overdue")) {
-    bg = "rgba(242, 109, 125, 0.1)";
-    color = "#f26d7d";
-  } else if (s.includes("leave") || s.includes("pending") || s.includes("hold") || s.includes("progress")) {
-    bg = "rgba(234, 179, 8, 0.1)";
-    color = "#facc15";
-  }
-  
-  return {
-    padding: "4px 10px",
-    borderRadius: 999,
-    fontSize: 11,
-    fontWeight: 600,
-    background: bg,
-    color: color,
-    textTransform: "capitalize",
-  };
-};
-
-/* --- Custom specifics omitted and merged --- */
-
-const createFormCard = formCard;
-const createFormGrid = formGrid;
-const createButton = (disabled) => ({ ...primaryButton, opacity: disabled ? 0.7 : 1, cursor: disabled ? "not-allowed" : "pointer" });
-const errorText = { fontSize: 13, color: "#f26d7d", marginTop: 8 };
-const rolePill = statusPill;
-const linkRow = { display: "flex", alignItems: "center", gap: 8 };
-const selectInput = input;
-const saveButton = (disabled) => ({ ...outlineButton, opacity: disabled ? 0.7 : 1, cursor: disabled ? "not-allowed" : "pointer" });

@@ -25,6 +25,12 @@ from reportlab.lib.units import mm
 import database, models, schemas, utils
 from database import engine, get_db
 
+
+from fastapi.security import OAuth2PasswordBearer
+from fastapi import Security
+from fastapi.security.utils import get_authorization_scheme_param
+from starlette.requests import Request
+
 models.Base.metadata.create_all(bind=engine)
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -36,15 +42,41 @@ app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=["*"],
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
+
+_allowed_origins = [
+    o.strip()
+    for o in os.getenv("FRONTEND_URL", "http://localhost:3000").split(",")
+    if o.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
+
+class OptionalOAuth2(OAuth2PasswordBearer):
+    """Same as OAuth2PasswordBearer but returns None instead of 401 when token is absent."""
+    async def __call__(self, request: Request):
+        authorization: str = request.headers.get("Authorization")
+        scheme, param = get_authorization_scheme_param(authorization)
+        if not authorization or scheme.lower() != "bearer":
+            return None
+        return param
+
+oauth2_scheme_optional = OptionalOAuth2(tokenUrl="/api/auth/login")
+
 
 
 @app.get("/")
@@ -440,18 +472,103 @@ def auth_me(current_user: models.User = Depends(get_current_user)):
     return {"user": serialize_user(current_user)}
 
 
+# @app.post("/api/auth/register")
+# def register_user(payload: schemas.UserCreate, db: Session = Depends(get_db)):
+#     if db.query(models.User).filter(models.User.username == payload.username).first():
+#         raise HTTPException(status_code=400, detail="Username already exists")
+#     if db.query(models.User).filter(models.User.email == payload.email).first():
+#         raise HTTPException(status_code=400, detail="Email already exists")
+
+#     linked_employee_id = payload.linkedEmployeeId
+#     if linked_employee_id is not None:
+#         employee = get_employee_or_404(db, linked_employee_id)
+#         if employee.user is not None:
+#             raise HTTPException(status_code=400, detail="Employee is already linked")
+#     else:
+#         auto_employee = models.Employee(
+#             name=payload.username,
+#             email=payload.email,
+#             phone=None,
+#             cnic=make_placeholder_cnic(),
+#             department="General",
+#             designation=payload.role,
+#             joiningDate=datetime.utcnow(),
+#             status="ACTIVE",
+#             baseSalary=0,
+#             allowance=0,
+#             workFormat="OFFICE",
+#             employmentType="FULL_TIME",
+#             employeeCode=generate_employee_code(db),
+#         )
+#         db.add(auto_employee)
+#         db.flush()
+#         linked_employee_id = auto_employee.id
+
+#     user = models.User(
+#         username=payload.username,
+#         email=payload.email,
+#         passwordHash=utils.get_password_hash(payload.password),
+#         role=payload.role,
+#         linkedEmployeeId=linked_employee_id,
+#         name=payload.username,
+#         jobTitle=payload.role,
+#     )
+#     db.add(user)
+#     db.commit()
+#     db.refresh(user)
+
+#     access_token = utils.create_access_token(data={"sub": user.username})
+#     return {"token": access_token, "user": serialize_user(user)}
+
+
 @app.post("/api/auth/register")
-def register_user(payload: schemas.UserCreate, db: Session = Depends(get_db)):
+def register_user(
+    payload: schemas.UserCreate,
+    db: Session = Depends(get_db),
+    token: str = Depends(oauth2_scheme_optional),   # optional — not required
+):
+    """
+    Two modes:
+      1. BOOTSTRAP (zero users in DB) — anyone can call this to create the first Admin.
+         Role is forced to "Admin" regardless of what was sent.
+      2. ADMIN-ONLY — once users exist, only an authenticated Admin can create more users.
+    """
+    user_count = db.query(models.User).count()
+    is_bootstrap = user_count == 0
+
+    if not is_bootstrap:
+        # Require a valid Admin token
+        if not token:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Authentication required to create users.",
+            )
+        try:
+            jwt_payload = jwt.decode(token, utils.SECRET_KEY, algorithms=[utils.ALGORITHM])
+            username = jwt_payload.get("sub")
+        except JWTError:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token.")
+
+        calling_user = db.query(models.User).filter(models.User.username == username).first()
+        if not calling_user or calling_user.role != "Admin":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only Admins can create user accounts.",
+            )
+
+    # Force role to Admin on bootstrap regardless of payload
+    effective_role = "Admin" if is_bootstrap else payload.role
+
     if db.query(models.User).filter(models.User.username == payload.username).first():
-        raise HTTPException(status_code=400, detail="Username already exists")
+        raise HTTPException(status_code=400, detail="Username already exists.")
     if db.query(models.User).filter(models.User.email == payload.email).first():
-        raise HTTPException(status_code=400, detail="Email already exists")
+        raise HTTPException(status_code=400, detail="Email already exists.")
 
     linked_employee_id = payload.linkedEmployeeId
     if linked_employee_id is not None:
         employee = get_employee_or_404(db, linked_employee_id)
         if employee.user is not None:
-            raise HTTPException(status_code=400, detail="Employee is already linked")
+            raise HTTPException(status_code=400, detail="Employee is already linked to another account.")
     else:
         auto_employee = models.Employee(
             name=payload.username,
@@ -459,7 +576,7 @@ def register_user(payload: schemas.UserCreate, db: Session = Depends(get_db)):
             phone=None,
             cnic=make_placeholder_cnic(),
             department="General",
-            designation=payload.role,
+            designation=effective_role,
             joiningDate=datetime.utcnow(),
             status="ACTIVE",
             baseSalary=0,
@@ -476,10 +593,10 @@ def register_user(payload: schemas.UserCreate, db: Session = Depends(get_db)):
         username=payload.username,
         email=payload.email,
         passwordHash=utils.get_password_hash(payload.password),
-        role=payload.role,
+        role=effective_role,
         linkedEmployeeId=linked_employee_id,
         name=payload.username,
-        jobTitle=payload.role,
+        jobTitle=effective_role,
     )
     db.add(user)
     db.commit()
