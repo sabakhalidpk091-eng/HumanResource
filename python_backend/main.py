@@ -9,7 +9,15 @@ from fastapi import Depends, FastAPI, File, HTTPException, Query, UploadFile, st
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
+
 from fastapi.security import OAuth2PasswordBearer
+from fastapi.security.utils import get_authorization_scheme_param
+from starlette.requests import Request
+
+from fastapi.security.utils import get_authorization_scheme_param
+from starlette.requests import Request
+
+
 from fastapi.staticfiles import StaticFiles
 from jose import JWTError, jwt
 from sqlalchemy import or_
@@ -26,10 +34,6 @@ import database, models, schemas, utils
 from database import engine, get_db
 
 
-from fastapi.security import OAuth2PasswordBearer
-from fastapi import Security
-from fastapi.security.utils import get_authorization_scheme_param
-from starlette.requests import Request
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -472,18 +476,56 @@ def auth_me(current_user: models.User = Depends(get_current_user)):
     return {"user": serialize_user(current_user)}
 
 
+
+
+
+
 # @app.post("/api/auth/register")
-# def register_user(payload: schemas.UserCreate, db: Session = Depends(get_db)):
+# def register_user(
+#     payload: schemas.UserCreate,
+#     db: Session = Depends(get_db),
+#     token: str = Depends(oauth2_scheme_optional),
+# ):
+#     """
+#     Two modes:
+#       1. BOOTSTRAP (zero users in DB) -> anyone can create the first account.
+#          Role is forced to 'Admin' regardless of payload.
+#       2. AFTER BOOTSTRAP -> only an authenticated Admin can create accounts.
+#     """
+#     user_count = db.query(models.User).count()
+#     is_bootstrap = user_count == 0
+
+#     if not is_bootstrap:
+#         if not token:
+#             raise HTTPException(
+#                 status_code=status.HTTP_401_UNAUTHORIZED,
+#                 detail="Authentication required to create users.",
+#             )
+#         try:
+#             payload_data = jwt.decode(token, utils.SECRET_KEY, algorithms=[utils.ALGORITHM])
+#             username = payload_data.get("sub")
+#         except JWTError:
+#             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token.")
+
+#         calling_user = db.query(models.User).filter(models.User.username == username).first()
+#         if not calling_user or calling_user.role != "Admin":
+#             raise HTTPException(
+#                 status_code=status.HTTP_403_FORBIDDEN,
+#                 detail="Only Admins can create user accounts.",
+#             )
+
+#     effective_role = "Admin" if is_bootstrap else payload.role
+
 #     if db.query(models.User).filter(models.User.username == payload.username).first():
-#         raise HTTPException(status_code=400, detail="Username already exists")
+#         raise HTTPException(status_code=400, detail="Username already exists.")
 #     if db.query(models.User).filter(models.User.email == payload.email).first():
-#         raise HTTPException(status_code=400, detail="Email already exists")
+#         raise HTTPException(status_code=400, detail="Email already exists.")
 
 #     linked_employee_id = payload.linkedEmployeeId
 #     if linked_employee_id is not None:
-#         employee = get_employee_or_404(db, linked_employee_id)
+#         employee = get_employee_or_çe(db, linked_employee_id)
 #         if employee.user is not None:
-#             raise HTTPException(status_code=400, detail="Employee is already linked")
+#             raise HTTPException(status_code=400, detail="Employee is already linked to another account.")
 #     else:
 #         auto_employee = models.Employee(
 #             name=payload.username,
@@ -491,8 +533,8 @@ def auth_me(current_user: models.User = Depends(get_current_user)):
 #             phone=None,
 #             cnic=make_placeholder_cnic(),
 #             department="General",
-#             designation=payload.role,
-#             joiningDate=datetime.utcnow(),
+#             designation=effective_role,
+#             joinDate=datetime.utcnow(),
 #             status="ACTIVE",
 #             baseSalary=0,
 #             allowance=0,
@@ -508,10 +550,10 @@ def auth_me(current_user: models.User = Depends(get_current_user)):
 #         username=payload.username,
 #         email=payload.email,
 #         passwordHash=utils.get_password_hash(payload.password),
-#         role=payload.role,
+#         role=effective_role,
 #         linkedEmployeeId=linked_employee_id,
 #         name=payload.username,
-#         jobTitle=payload.role,
+#         jobTitle=effective_role,
 #     )
 #     db.add(user)
 #     db.commit()
@@ -525,30 +567,30 @@ def auth_me(current_user: models.User = Depends(get_current_user)):
 def register_user(
     payload: schemas.UserCreate,
     db: Session = Depends(get_db),
-    token: str = Depends(oauth2_scheme_optional),   # optional — not required
+    token: str = Depends(oauth2_scheme_optional),
 ):
     """
     Two modes:
-      1. BOOTSTRAP (zero users in DB) — anyone can call this to create the first Admin.
-         Role is forced to "Admin" regardless of what was sent.
-      2. ADMIN-ONLY — once users exist, only an authenticated Admin can create more users.
+      1. BOOTSTRAP (zero users in DB) — anyone can create the first Admin account.
+      2. AFTER BOOTSTRAP — only an authenticated Admin can create accounts.
     """
     user_count = db.query(models.User).count()
     is_bootstrap = user_count == 0
 
     if not is_bootstrap:
-        # Require a valid Admin token
         if not token:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Authentication required to create users.",
             )
         try:
-            jwt_payload = jwt.decode(token, utils.SECRET_KEY, algorithms=[utils.ALGORITHM])
-            username = jwt_payload.get("sub")
+            token_data = jwt.decode(token, utils.SECRET_KEY, algorithms=[utils.ALGORITHM])
+            username = token_data.get("sub")
         except JWTError:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token.")
-
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token.",
+            )
         calling_user = db.query(models.User).filter(models.User.username == username).first()
         if not calling_user or calling_user.role != "Admin":
             raise HTTPException(
@@ -556,7 +598,6 @@ def register_user(
                 detail="Only Admins can create user accounts.",
             )
 
-    # Force role to Admin on bootstrap regardless of payload
     effective_role = "Admin" if is_bootstrap else payload.role
 
     if db.query(models.User).filter(models.User.username == payload.username).first():
@@ -568,7 +609,10 @@ def register_user(
     if linked_employee_id is not None:
         employee = get_employee_or_404(db, linked_employee_id)
         if employee.user is not None:
-            raise HTTPException(status_code=400, detail="Employee is already linked to another account.")
+            raise HTTPException(
+                status_code=400,
+                detail="Employee is already linked to another account.",
+            )
     else:
         auto_employee = models.Employee(
             name=payload.username,
