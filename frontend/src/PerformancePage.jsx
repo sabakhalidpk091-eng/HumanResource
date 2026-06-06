@@ -1,406 +1,349 @@
-import React, { useEffect, useState } from "react";
+// PerformancePage.jsx
+import React, { useEffect, useState, useCallback } from "react";
 import api from "./api";
+import toast from "react-hot-toast";
+import { Plus, X, Star, Award } from "lucide-react";
+
+const EMPTY = {
+  employeeId: "",
+  periodStart: "",
+  periodEnd: "",
+  rating: 3,
+  notes: "",
+};
+
+function StarRating({ value, onChange, readonly }) {
+  return (
+    <div className="flex gap-1">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <button
+          key={n}
+          type="button"
+          onClick={() => !readonly && onChange && onChange(n)}
+          style={{
+            background: "none",
+            border: "none",
+            cursor: readonly ? "default" : "pointer",
+            padding: 2,
+          }}
+        >
+          <Star
+            size={18}
+            fill={n <= value ? "var(--warning)" : "none"}
+            color={n <= value ? "var(--warning)" : "var(--border-strong)"}
+          />
+        </button>
+      ))}
+    </div>
+  );
+}
 
 export default function PerformancePage() {
-  const [employees, setEmployees] = useState([]);
-  const [selectedEmpId, setSelectedEmpId] = useState("");
   const [reviews, setReviews] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [employees, setEmployees] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState(EMPTY);
+  const [showForm, setShowForm] = useState(false);
+  const [empFilter, setEmpFilter] = useState("");
 
-  const [form, setForm] = useState({
-    periodStart: "",
-    periodEnd: "",
-    rating: 5,
-    notes: "",
-  });
-
-  useEffect(() => {
-    const loadEmployees = async () => {
-      try {
-        const res = await api.get("/employees?pageSize=100");
-        setEmployees(res.data.data || []);
-      } catch (err) {
-        console.error("Error loading employees:", err);
-      }
-    };
-    loadEmployees();
-  }, []);
-
-  const loadReviews = async (empId) => {
-    if (!empId) {
-      setReviews([]);
-      return;
-    }
+  const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get(`/performance/${empId}`);
-      setReviews(res.data || []);
-    } catch (err) {
-      console.error("Error loading reviews:", err);
+      const [rRes, eRes] = await Promise.all([
+        api.get(
+          "/performance",
+          empFilter ? { params: { employeeId: empFilter } } : {},
+        ),
+        api.get("/employees", { params: { pageSize: 200 } }),
+      ]);
+      setReviews(rRes.data || []);
+      setEmployees(
+        Array.isArray(eRes.data) ? eRes.data : eRes.data?.data || [],
+      );
+    } catch {
+      toast.error("Could not load reviews.");
     } finally {
       setLoading(false);
     }
-  };
+  }, [empFilter]);
 
-  const handleEmpChange = (e) => {
-    const id = e.target.value;
-    setSelectedEmpId(id);
-    loadReviews(id);
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const reset = () => {
+    setForm(EMPTY);
+    setShowForm(false);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!selectedEmpId) return alert("Please select an employee");
     setSaving(true);
     try {
       await api.post("/performance", {
-        employeeId: selectedEmpId,
         ...form,
+        employeeId: Number(form.employeeId),
+        rating: Number(form.rating),
       });
-      setForm({ periodStart: "", periodEnd: "", rating: 5, notes: "" });
-      loadReviews(selectedEmpId);
+      toast.success("Review added.");
+      reset();
+      load();
     } catch (err) {
-      console.error("Error saving review:", err);
-      alert("Could not save review.");
+      toast.error(err.response?.data?.error || "Failed.");
     } finally {
       setSaving(false);
     }
   };
 
+  const avgRating = reviews.length
+    ? (
+        reviews.reduce((s, r) => s + (r.rating || 0), 0) / reviews.length
+      ).toFixed(1)
+    : "—";
+
   return (
-    <div style={pageInner}>
-      <header style={headerRow}>
+    <div className="page-body">
+      <div className="page-header">
         <div>
-          <div style={eyebrow}>TALENT MANAGEMENT</div>
-          <h2 style={title}>Performance Reviews</h2>
+          <h2 className="page-title">Performance Reviews</h2>
+          <p className="page-subtitle">
+            {reviews.length} reviews · avg {avgRating} / 5
+          </p>
         </div>
-      </header>
+        <button
+          className="btn btn-primary"
+          onClick={() => {
+            setShowForm(true);
+            setForm(EMPTY);
+          }}
+        >
+          <Plus size={15} /> Add Review
+        </button>
+      </div>
 
-      <div style={mainGrid}>
-        {/* Selection & Form */}
-        <div style={formCard}>
-          <h3 style={sectionTitle}>New Review</h3>
-          <div style={{ marginBottom: 16 }}>
-            <label style={fieldLabel}>Select Employee</label>
-            <select value={selectedEmpId} onChange={handleEmpChange} style={input}>
-              <option value="">-- Choose Employee --</option>
-              {employees.map((emp) => (
-                <option key={emp.id} value={emp.id}>
-                  {emp.name} ({emp.department})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <form onSubmit={handleSubmit} style={formStack}>
-            <div style={formGrid}>
-              <div style={fieldCol}>
-                <label style={fieldLabel}>Period Start</label>
-                <input
-                  type="date"
-                  style={input}
-                  value={form.periodStart}
-                  onChange={(e) => setForm({ ...form, periodStart: e.target.value })}
-                  required
-                />
+      {/* Summary */}
+      <div className="grid-4" style={{ marginBottom: 24 }}>
+        {[5, 4, 3, 2, 1].slice(0, 4).map((r) => {
+          const count = reviews.filter((rev) => rev.rating === r).length;
+          return (
+            <div key={r} className="stat-card">
+              <div className="stat-label">
+                {r} Star{r !== 1 ? "s" : ""}
               </div>
-              <div style={fieldCol}>
-                <label style={fieldLabel}>Period End</label>
-                <input
-                  type="date"
-                  style={input}
-                  value={form.periodEnd}
-                  onChange={(e) => setForm({ ...form, periodEnd: e.target.value })}
-                  required
-                />
-              </div>
+              <div className="stat-value">{count}</div>
             </div>
+          );
+        })}
+      </div>
 
-            <div style={{ marginTop: 12 }}>
-              <label style={fieldLabel}>Rating (1-5)</label>
-              <div style={ratingRow}>
-                {[1, 2, 3, 4, 5].map((r) => (
-                  <button
-                    key={r}
-                    type="button"
-                    onClick={() => setForm({ ...form, rating: r })}
-                    style={ratingCircle(form.rating === r)}
-                  >
-                    {r}
-                  </button>
-                ))}
-              </div>
-            </div>
+      {/* Filter */}
+      <div style={{ marginBottom: 20, maxWidth: 280 }}>
+        <select
+          className="form-input"
+          value={empFilter}
+          onChange={(e) => setEmpFilter(e.target.value)}
+        >
+          <option value="">All employees</option>
+          {employees.map((e) => (
+            <option key={e.id} value={e.id}>
+              {e.name}
+            </option>
+          ))}
+        </select>
+      </div>
 
-            <div style={{ marginTop: 12 }}>
-              <label style={fieldLabel}>Manager Notes</label>
-              <textarea
-                style={{ ...input, height: 100, borderRadius: 16, resize: "none" }}
-                value={form.notes}
-                onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                placeholder="Write feedback here..."
-              />
-            </div>
-
-            <button type="submit" disabled={saving || !selectedEmpId} style={primaryButton}>
-              {saving ? "Saving..." : "Submit Review"}
+      {/* Form */}
+      {showForm && (
+        <div className="card card-pad" style={{ marginBottom: 24 }}>
+          <div
+            className="flex items-center justify-between"
+            style={{ marginBottom: 20 }}
+          >
+            <h3
+              style={{
+                fontSize: 15,
+                fontWeight: 700,
+                color: "var(--text-main)",
+              }}
+            >
+              New Performance Review
+            </h3>
+            <button
+              className="btn btn-secondary btn-sm btn-icon"
+              onClick={reset}
+            >
+              <X size={15} />
             </button>
+          </div>
+          <form onSubmit={handleSubmit}>
+            <div className="grid-2" style={{ gap: 16 }}>
+              <div>
+                <label className="form-label">Employee</label>
+                <select
+                  className="form-input"
+                  value={form.employeeId}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, employeeId: e.target.value }))
+                  }
+                  required
+                >
+                  <option value="">Select employee...</option>
+                  {employees.map((e) => (
+                    <option key={e.id} value={e.id}>
+                      {e.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="form-label">Rating</label>
+                <StarRating
+                  value={form.rating}
+                  onChange={(v) => setForm((p) => ({ ...p, rating: v }))}
+                />
+              </div>
+              <div>
+                <label className="form-label">Period Start</label>
+                <input
+                  className="form-input"
+                  type="date"
+                  value={form.periodStart}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, periodStart: e.target.value }))
+                  }
+                  required
+                />
+              </div>
+              <div>
+                <label className="form-label">Period End</label>
+                <input
+                  className="form-input"
+                  type="date"
+                  value={form.periodEnd}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, periodEnd: e.target.value }))
+                  }
+                  required
+                />
+              </div>
+              <div style={{ gridColumn: "1/-1" }}>
+                <label className="form-label">Notes</label>
+                <textarea
+                  className="form-input"
+                  rows={3}
+                  value={form.notes}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, notes: e.target.value }))
+                  }
+                  placeholder="Performance summary, key achievements, areas for improvement..."
+                />
+              </div>
+            </div>
+            <div className="flex gap-3" style={{ marginTop: 20 }}>
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={saving}
+              >
+                {saving ? "Saving…" : "Submit Review"}
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={reset}
+              >
+                Cancel
+              </button>
+            </div>
           </form>
         </div>
+      )}
 
-        {/* History List */}
-        <div style={historyCard}>
-          <h3 style={sectionTitle}>Review History</h3>
-          {loading ? (
-            <p style={infoText}>Loading...</p>
-          ) : reviews.length === 0 ? (
-            <p style={infoText}>No reviews found for this employee.</p>
-          ) : (
-            <div style={reviewList}>
+      {/* Table */}
+      <div className="table-wrap">
+        {loading ? (
+          <div
+            style={{
+              padding: 32,
+              display: "flex",
+              flexDirection: "column",
+              gap: 12,
+            }}
+          >
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="skeleton skeleton-text" />
+            ))}
+          </div>
+        ) : reviews.length === 0 ? (
+          <div
+            style={{
+              padding: 48,
+              textAlign: "center",
+              color: "var(--text-muted)",
+            }}
+          >
+            <Award size={40} style={{ margin: "0 auto 16px" }} />
+            <p>No reviews yet.</p>
+          </div>
+        ) : (
+          <table>
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>Period</th>
+                <th>Rating</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
               {reviews.map((r) => (
-                <div key={r.id} style={reviewItem}>
-                  <div style={reviewHeader}>
-                    <span style={reviewPeriod}>
-                      {r.periodStart.slice(0, 7)} to {r.periodEnd.slice(0, 7)}
-                    </span>
-                    <span style={reviewBadge(r.rating)}>Rating: {r.rating}/5</span>
-                  </div>
-                  <p style={reviewNotes}>{r.notes || "No notes provided."}</p>
-                </div>
+                <tr key={r.id}>
+                  <td>
+                    <div style={{ fontWeight: 600, fontSize: 13 }}>
+                      {r.employee?.name || "—"}
+                    </div>
+                    <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                      {r.employee?.department}
+                    </div>
+                  </td>
+                  <td style={{ fontSize: 12, color: "var(--text-sub)" }}>
+                    {r.periodStart
+                      ? new Date(r.periodStart).toLocaleDateString("en-GB", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })
+                      : "—"}
+                    {" – "}
+                    {r.periodEnd
+                      ? new Date(r.periodEnd).toLocaleDateString("en-GB", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })
+                      : "—"}
+                  </td>
+                  <td>
+                    <StarRating value={r.rating} readonly />
+                  </td>
+                  <td
+                    style={{
+                      fontSize: 12,
+                      color: "var(--text-muted)",
+                      maxWidth: 240,
+                    }}
+                  >
+                    {r.notes
+                      ? r.notes.slice(0, 80) + (r.notes.length > 80 ? "…" : "")
+                      : "—"}
+                  </td>
+                </tr>
               ))}
-            </div>
-          )}
-        </div>
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );
 }
-
-
-/* --- Applied Dark Theme --- */
-const pageInner = {
-  maxWidth: 1400,
-  margin: "0 auto",
-  display: "flex",
-  flexDirection: "column",
-  gap: 20,
-  padding: 24,
-  background: "#0f1017",
-  minHeight: "100vh",
-  color: "#ffffff"
-};
-
-const headerRow = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  padding: "16px 24px",
-  borderRadius: 16,
-  background: "#12131c",
-  border: "1px solid #232533",
-};
-
-const eyebrow = {
-  fontSize: 11,
-  color: "#7c829e",
-  letterSpacing: 1,
-  fontWeight: 600,
-  marginBottom: 4,
-};
-
-const title = {
-  margin: 0,
-  fontSize: 24,
-  color: "#ffffff",
-  letterSpacing: "-0.5px"
-};
-
-const badge = {
-  display: "flex",
-  flexDirection: "column",
-  textAlign: "right"
-};
-
-const mainGrid = {
-  display: "grid",
-  gridTemplateColumns: "1fr 1.2fr",
-  gap: 24,
-};
-
-const glassCard = {
-  background: "#12131c",
-  borderRadius: 16,
-  border: "1px solid #232533",
-  boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
-  padding: 24
-};
-
-const formCard = { ...glassCard };
-const historyCard = { ...glassCard };
-const tableCard = { ...glassCard };
-
-const sectionTitle = { fontSize: 18, marginTop: 0, color: "#ffffff", marginBottom: 20, fontWeight: 600, letterSpacing: "-0.3px" };
-const fieldLabel = { fontSize: 11, color: "#7c829e", display: "block", marginBottom: 8, fontWeight: 600, letterSpacing: "0.05em" };
-
-const input = {
-  width: "100%",
-  padding: "12px 14px",
-  background: "#1a1b26",
-  border: "1px solid #323546",
-  borderRadius: 8,
-  color: "#ffffff",
-  fontSize: 14,
-  outline: "none",
-  boxSizing: "border-box",
-  transition: "all 0.2s ease"
-};
-
-const formStack = { display: "flex", flexDirection: "column", gap: 16 };
-const formGrid = { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 };
-const fieldCol = { display: "flex", flexDirection: "column" };
-
-const ratingRow = { display: "flex", gap: 8 };
-const ratingCircle = (active) => ({
-  width: 36,
-  height: 36,
-  borderRadius: "50%",
-  border: active ? "1px solid #ffffff" : "1px solid #323546",
-  background: active ? "#ffffff" : "#1a1b26",
-  color: active ? "#0f1017" : "#ffffff",
-  fontWeight: 600,
-  cursor: "pointer",
-  transition: "all 0.2s ease",
-});
-
-const primaryButton = {
-  marginTop: 10,
-  padding: "12px 24px",
-  borderRadius: 8,
-  border: "none",
-  background: "#ffffff",
-  color: "#0f1017",
-  fontWeight: 600,
-  cursor: "pointer",
-  transition: "all 0.2s ease"
-};
-
-const ghostButton = {
-  padding: "12px 24px",
-  borderRadius: 8,
-  border: "1px solid #323546",
-  background: "transparent",
-  color: "#ffffff",
-  fontSize: 14,
-  fontWeight: 600,
-  cursor: "pointer",
-  transition: "all 0.2s ease"
-};
-
-const outlineButton = {
-  padding: "6px 12px",
-  borderRadius: 6,
-  border: "1px solid #6b5ce7",
-  background: "transparent",
-  color: "#a29bfe",
-  fontSize: 12,
-  fontWeight: 500,
-  cursor: "pointer",
-  marginRight: 8,
-};
-
-const dangerButton = {
-  padding: "6px 12px",
-  borderRadius: 6,
-  border: "1px solid #f26d7d",
-  background: "transparent",
-  color: "#ffbec8",
-  fontSize: 12,
-  fontWeight: 500,
-  cursor: "pointer",
-};
-
-const infoText = { fontSize: 14, color: "#7c829e" };
-const reviewList = { display: "flex", flexDirection: "column", gap: 16 };
-
-const reviewItem = {
-  padding: 16,
-  background: "#1a1b26",
-  borderRadius: 12,
-  border: "1px solid #232533",
-};
-
-const reviewHeader = { display: "flex", justifyContent: "space-between", marginBottom: 12, alignItems: "center" };
-const reviewPeriod = { fontSize: 13, fontWeight: 600, color: "#ffffff" };
-
-const reviewBadge = (rating) => ({
-  fontSize: 11,
-  padding: "4px 10px",
-  borderRadius: 999,
-  background: rating >= 4 ? "rgba(16, 185, 129, 0.1)" : "rgba(242, 109, 125, 0.1)",
-  color: rating >= 4 ? "#10b981" : "#f26d7d",
-  fontWeight: 600
-});
-
-const reviewNotes = { fontSize: 14, color: "#7c829e", margin: 0, lineHeight: 1.5 };
-
-const tableScroller = { width: "100%", overflowX: "auto" };
-const table = { width: "100%", borderCollapse: "collapse", fontSize: 13 };
-const th = { textAlign: "left", padding: "12px 8px", borderBottom: "1px solid #232533", color: "#7c829e", fontWeight: 600 };
-const td = { padding: "12px 8px", borderBottom: "1px solid #232533", color: "#ffffff", verticalAlign: "middle" };
-
-const errorBox = {
-  marginTop: 8,
-  marginBottom: 8,
-  padding: 12,
-  borderRadius: 8,
-  background: "rgba(242, 109, 125, 0.1)",
-  border: "1px solid rgba(242, 109, 125, 0.3)",
-  color: "#f26d7d",
-  fontSize: 13,
-};
-
-const paginationRow = { marginTop: 20, display: "flex", alignItems: "center", gap: 16, justifyContent: "flex-end" };
-const pageBtn = (disabled) => ({
-  padding: "8px 16px",
-  borderRadius: 8,
-  border: "1px solid #323546",
-  background: disabled ? "transparent" : "#1a1b26",
-  color: disabled ? "#585c78" : "#ffffff",
-  cursor: disabled ? "not-allowed" : "pointer",
-  fontSize: 13,
-  fontWeight: 500
-});
-
-const statusPill = (status) => {
-  let bg = "rgba(124, 108, 247, 0.1)";
-  let color = "#a29bfe";
-  const s = String(status).toLowerCase();
-  
-  if (s.includes("active") || s.includes("hired") || s.includes("approved") || s.includes("present") || s.includes("done")) {
-    bg = "rgba(16, 185, 129, 0.1)";
-    color = "#10b981";
-  } else if (s.includes("inactive") || s.includes("rejected") || s.includes("absent") || s.includes("overdue")) {
-    bg = "rgba(242, 109, 125, 0.1)";
-    color = "#f26d7d";
-  } else if (s.includes("leave") || s.includes("pending") || s.includes("hold") || s.includes("progress")) {
-    bg = "rgba(234, 179, 8, 0.1)";
-    color = "#facc15";
-  }
-  
-  return {
-    padding: "4px 10px",
-    borderRadius: 999,
-    fontSize: 11,
-    fontWeight: 600,
-    background: bg,
-    color: color,
-    textTransform: "capitalize",
-  };
-};
-
-/* --- Specific custom logic mappings --- */
-const statBox = { padding: 16, borderRadius: 12, background: "#1a1b26", border: "1px solid #232533", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" };
-const statVal = { fontSize: 24, fontWeight: 700, color: "#ffffff", marginBottom: 4 };
-const statLabel = { fontSize: 13, color: "#7c829e" };
-const statusBadge = statusPill;

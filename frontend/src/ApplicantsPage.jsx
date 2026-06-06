@@ -1,234 +1,429 @@
-import React, { useEffect, useState } from "react";
+// ApplicantsPage.jsx
+import React, { useEffect, useState, useCallback } from "react";
 import api from "./api";
+import toast from "react-hot-toast";
+import { Plus, X, Edit2, Trash2, UserPlus } from "lucide-react";
+
+const STATUS_OPTS = [
+  "Applied",
+  "Screening",
+  "Interview",
+  "Offer",
+  "Hired",
+  "Rejected",
+];
+const STATUS_BADGE = {
+  Applied: "badge-muted",
+  Screening: "badge-accent",
+  Interview: "badge-warning",
+  Offer: "badge-info",
+  Hired: "badge-success",
+  Rejected: "badge-danger",
+};
+const EMPTY = {
+  vacancyId: "",
+  name: "",
+  email: "",
+  phone: "",
+  notes: "",
+  status: "Applied",
+};
 
 export default function ApplicantsPage() {
   const [applicants, setApplicants] = useState([]);
   const [vacancies, setVacancies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [editingId, setEditingId] = useState(null);
+  const [form, setForm] = useState(EMPTY);
+  const [editId, setEditId] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [vacFilter, setVacFilter] = useState("");
 
-  const [form, setForm] = useState({
-    vacancyId: "",
-    name: "",
-    email: "",
-    phone: "",
-    notes: "",
-    status: "Applied",
-  });
-
-  const loadData = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [appRes, vacRes] = await Promise.all([
-        api.get("/applicants").catch(() => ({ data: [] })),
-        api.get("/vacancies").catch(() => ({ data: [] })),
+      const [aRes, vRes] = await Promise.all([
+        api.get("/applicants", {
+          params: vacFilter ? { vacancyId: vacFilter } : {},
+        }),
+        api.get("/vacancies"),
       ]);
-      const appData = Array.isArray(appRes.data) ? appRes.data : (Array.isArray(appRes.data?.data) ? appRes.data.data : []);
-      const vacData = Array.isArray(vacRes.data) ? vacRes.data : (Array.isArray(vacRes.data?.data) ? vacRes.data.data : []);
-      
-      setApplicants(appData);
-      setVacancies(vacData);
-    } catch (err) {
-      console.error("Error loading ATS data:", err);
+      setApplicants(aRes.data || []);
+      setVacancies(vRes.data || []);
+    } catch {
+      toast.error("Could not load applicants.");
     } finally {
       setLoading(false);
     }
-  };
+  }, [vacFilter]);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    load();
+  }, [load]);
+
+  const reset = () => {
+    setForm(EMPTY);
+    setEditId(null);
+    setShowForm(false);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
     try {
-      if (editingId) {
-        await api.put(`/applicants/${editingId}`, {
-          status: form.status,
-          notes: form.notes,
-        });
+      if (editId) {
+        await api.put(`/applicants/${editId}`, form);
+        toast.success("Updated.");
       } else {
         await api.post("/applicants", form);
+        toast.success("Added.");
       }
-      resetForm();
-      loadData();
+      reset();
+      load();
     } catch (err) {
-      alert("Error saving application");
+      toast.error(err.response?.data?.error || "Failed.");
     } finally {
       setSaving(false);
     }
   };
 
-  const handleEdit = (app) => {
-    setEditingId(app.id);
+  const handleEdit = (a) => {
     setForm({
-      vacancyId: app.vacancyId,
-      name: app.name,
-      email: app.email,
-      phone: app.phone || "",
-      notes: app.notes || "",
-      status: app.status,
+      vacancyId: a.vacancyId || "",
+      name: a.name || "",
+      email: a.email || "",
+      phone: a.phone || "",
+      notes: a.notes || "",
+      status: a.status || "Applied",
     });
+    setEditId(a.id);
+    setShowForm(true);
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Remove this applicant?")) return;
+    if (!window.confirm("Delete applicant?")) return;
     try {
       await api.delete(`/applicants/${id}`);
-      loadData();
-    } catch (err) {
-      alert("Error deleting applicant");
+      toast.success("Deleted.");
+      load();
+    } catch {
+      toast.error("Failed.");
     }
   };
 
-  const resetForm = () => {
-    setForm({
-      vacancyId: "",
-      name: "",
-      email: "",
-      phone: "",
-      notes: "",
-      status: "Applied",
-    });
-    setEditingId(null);
+  const handleStatusChange = async (id, status) => {
+    try {
+      await api.put(`/applicants/${id}`, { status });
+      load();
+    } catch {
+      toast.error("Could not update status.");
+    }
   };
 
+  const pipeline = STATUS_OPTS.map((s) => ({
+    status: s,
+    count: applicants.filter((a) => a.status === s).length,
+  }));
+
   return (
-    <div style={pageInner}>
-      <header style={headerRow}>
+    <div className="page-body">
+      <div className="page-header">
         <div>
-          <div style={eyebrow}>RECRUITMENT (ATS)</div>
-          <h2 style={title}>Job Applicants</h2>
+          <h2 className="page-title">Applicants</h2>
+          <p className="page-subtitle">{applicants.length} total applicants</p>
         </div>
-        <div style={badge}>
-          <span style={{ fontSize: 11, color: "#9ca3af" }}>Applications</span>
-          <span style={{ fontSize: 16, fontWeight: 600, color: "#fff" }}>{applicants.length}</span>
-        </div>
-      </header>
+        <button
+          className="btn btn-primary"
+          onClick={() => {
+            setShowForm(true);
+            setEditId(null);
+            setForm(EMPTY);
+          }}
+        >
+          <Plus size={15} /> Add Applicant
+        </button>
+      </div>
 
-      <div style={mainGrid}>
-        {/* Form */}
-        <div style={glassCard}>
-          <h3 style={sectionTitle}>{editingId ? "Update Status" : "Add Applicant Manually"}</h3>
-          <form onSubmit={handleSubmit} style={formStack}>
-            {!editingId && (
-              <>
-                <div style={fieldCol}>
-                  <label style={fieldLabel}>SELECT VACANCY</label>
-                  <select style={input} value={form.vacancyId} onChange={(e) => setForm({...form, vacancyId: e.target.value})} required>
-                    <option value="" disabled>-- Choose Role --</option>
-                    {vacancies.length === 0 && <option value="" disabled>No vacancies available (Create one first)</option>}
-                    {vacancies.map(v => <option key={v.id} value={v.id}>{v.title}</option>)}
-                  </select>
-                </div>
-                <Field label="FULL NAME" value={form.name} onChange={v => setForm({...form, name: v})} required placeholder="John Doe" />
-                <Field label="EMAIL" type="email" value={form.email} onChange={v => setForm({...form, email: v})} required placeholder="john@example.com" />
-                <Field label="PHONE" value={form.phone} onChange={v => setForm({...form, phone: v})} placeholder="+1 234 567 8900" />
-              </>
-            )}
-            
-            <div style={fieldCol}>
-              <label style={fieldLabel}>STATUS</label>
-              <select style={input} value={form.status} onChange={(e) => setForm({...form, status: e.target.value})}>
-                <option value="Applied">Applied</option>
-                <option value="Interviewing">Interviewing</option>
-                <option value="Hired">Hired</option>
-                <option value="Rejected">Rejected</option>
-              </select>
+      {/* Pipeline summary */}
+      <div
+        style={{ display: "flex", gap: 8, marginBottom: 24, flexWrap: "wrap" }}
+      >
+        {pipeline.map((p) => (
+          <div
+            key={p.status}
+            className="card"
+            style={{
+              padding: "10px 16px",
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+            }}
+          >
+            <span
+              style={{
+                fontSize: 18,
+                fontWeight: 800,
+                color: "var(--text-main)",
+              }}
+            >
+              {p.count}
+            </span>
+            <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
+              {p.status}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* Filters */}
+      <div className="flex gap-3" style={{ marginBottom: 20 }}>
+        <select
+          className="form-input"
+          style={{ maxWidth: 260 }}
+          value={vacFilter}
+          onChange={(e) => setVacFilter(e.target.value)}
+        >
+          <option value="">All vacancies</option>
+          {vacancies.map((v) => (
+            <option key={v.id} value={v.id}>
+              {v.title}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Form */}
+      {showForm && (
+        <div className="card card-pad" style={{ marginBottom: 24 }}>
+          <div
+            className="flex items-center justify-between"
+            style={{ marginBottom: 20 }}
+          >
+            <h3
+              style={{
+                fontSize: 15,
+                fontWeight: 700,
+                color: "var(--text-main)",
+              }}
+            >
+              {editId ? "Edit Applicant" : "Add Applicant"}
+            </h3>
+            <button
+              className="btn btn-secondary btn-sm btn-icon"
+              onClick={reset}
+            >
+              <X size={15} />
+            </button>
+          </div>
+          <form onSubmit={handleSubmit}>
+            <div className="grid-2" style={{ gap: 16 }}>
+              <div>
+                <label className="form-label">Vacancy</label>
+                <select
+                  className="form-input"
+                  value={form.vacancyId}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, vacancyId: e.target.value }))
+                  }
+                  required
+                >
+                  <option value="">Select vacancy...</option>
+                  {vacancies.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="form-label">Full Name</label>
+                <input
+                  className="form-input"
+                  value={form.name}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, name: e.target.value }))
+                  }
+                  required
+                  placeholder="Applicant name"
+                />
+              </div>
+              <div>
+                <label className="form-label">Email</label>
+                <input
+                  className="form-input"
+                  type="email"
+                  value={form.email}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, email: e.target.value }))
+                  }
+                  placeholder="email@example.com"
+                />
+              </div>
+              <div>
+                <label className="form-label">Phone</label>
+                <input
+                  className="form-input"
+                  value={form.phone}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, phone: e.target.value }))
+                  }
+                  placeholder="+92 300 0000000"
+                />
+              </div>
+              <div>
+                <label className="form-label">Stage</label>
+                <select
+                  className="form-input"
+                  value={form.status}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, status: e.target.value }))
+                  }
+                >
+                  {STATUS_OPTS.map((s) => (
+                    <option key={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+              <div style={{ gridColumn: "1/-1" }}>
+                <label className="form-label">Notes</label>
+                <textarea
+                  className="form-input"
+                  rows={2}
+                  value={form.notes}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, notes: e.target.value }))
+                  }
+                  placeholder="Interview notes, observations..."
+                />
+              </div>
             </div>
-
-            <div style={fieldCol}>
-              <label style={fieldLabel}>NOTES / FEEDBACK</label>
-              <textarea style={{...input, height: 100, borderRadius: 8, resize: "none"}} value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} placeholder="Enter feedback here..." />
-            </div>
-
-            <div style={{display: "flex", gap: 10, marginTop: 8}}>
-              <button type="submit" disabled={saving} style={primaryButton}>
-                {saving ? "Saving..." : editingId ? "Update Applicant" : "Submit Applicant"}
+            <div className="flex gap-3" style={{ marginTop: 20 }}>
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={saving}
+              >
+                {saving ? "Saving…" : editId ? "Update" : "Add Applicant"}
               </button>
-              {editingId && <button type="button" onClick={resetForm} style={ghostButton}>Cancel</button>}
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={reset}
+              >
+                Cancel
+              </button>
             </div>
           </form>
         </div>
+      )}
 
-        {/* List */}
-        <div style={glassCard}>
-          <h3 style={sectionTitle}>Candidate Pipeline</h3>
-          <div style={applicantList}>
-            {loading ? <p style={infoText}>Loading...</p> : applicants.length === 0 ? <p style={infoText}>No applicants yet.</p> : (
-              applicants.map(app => (
-                <div key={app.id} style={applicantItem}>
-                  <div style={appHeader}>
-                    <div style={appInfo}>
-                      <span style={appName}>{app.name}</span>
-                      <span style={appRole}>{app.vacancy?.title}</span>
-                    </div>
-                    <span style={statusBadge(app.status)}>{app.status}</span>
-                  </div>
-                  <div style={appMeta}>
-                    <span>Email: {app.email}</span>
-                    {app.phone && <span>Phone: {app.phone}</span>}
-                  </div>
-                  <div style={appActions}>
-                    <button onClick={() => handleEdit(app)} style={actionLink}>Manage</button>
-                    <button onClick={() => handleDelete(app.id)} style={{...actionLink, color: "#fb7185"}}>Remove</button>
-                  </div>
-                </div>
-              ))
-            )}
+      {/* Table */}
+      <div className="table-wrap">
+        {loading ? (
+          <div
+            style={{
+              padding: 32,
+              display: "flex",
+              flexDirection: "column",
+              gap: 12,
+            }}
+          >
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="skeleton skeleton-text" />
+            ))}
           </div>
-        </div>
+        ) : applicants.length === 0 ? (
+          <div
+            style={{
+              padding: 48,
+              textAlign: "center",
+              color: "var(--text-muted)",
+            }}
+          >
+            <UserPlus size={40} style={{ margin: "0 auto 16px" }} />
+            <p>No applicants yet.</p>
+          </div>
+        ) : (
+          <table>
+            <thead>
+              <tr>
+                <th>Applicant</th>
+                <th>Vacancy</th>
+                <th>Phone</th>
+                <th>Stage</th>
+                <th>Notes</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {applicants.map((a) => (
+                <tr key={a.id}>
+                  <td>
+                    <div style={{ fontWeight: 600, fontSize: 13 }}>
+                      {a.name}
+                    </div>
+                    <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                      {a.email}
+                    </div>
+                  </td>
+                  <td style={{ color: "var(--text-sub)", fontSize: 13 }}>
+                    {a.vacancy?.title || "—"}
+                  </td>
+                  <td style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                    {a.phone || "—"}
+                  </td>
+                  <td>
+                    <select
+                      value={a.status}
+                      onChange={(e) => handleStatusChange(a.id, e.target.value)}
+                      style={{
+                        background: "var(--bg-input)",
+                        border: "1px solid var(--border)",
+                        borderRadius: 6,
+                        padding: "4px 8px",
+                        fontSize: 12,
+                        color: "var(--text-main)",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {STATUS_OPTS.map((s) => (
+                        <option key={s}>{s}</option>
+                      ))}
+                    </select>
+                  </td>
+                  <td
+                    style={{
+                      maxWidth: 180,
+                      fontSize: 12,
+                      color: "var(--text-muted)",
+                    }}
+                  >
+                    {a.notes
+                      ? a.notes.slice(0, 60) + (a.notes.length > 60 ? "…" : "")
+                      : "—"}
+                  </td>
+                  <td>
+                    <div className="flex gap-2">
+                      <button
+                        className="btn btn-secondary btn-sm btn-icon"
+                        onClick={() => handleEdit(a)}
+                      >
+                        <Edit2 size={12} />
+                      </button>
+                      <button
+                        className="btn btn-danger btn-sm btn-icon"
+                        onClick={() => handleDelete(a.id)}
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );
 }
-
-function Field({ label, value, onChange, type = "text", required, placeholder }) {
-  return (
-    <div style={fieldCol}>
-      <label style={fieldLabel}>{label}</label>
-      <input type={type} value={value} required={required} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} style={input} />
-    </div>
-  );
-}
-
-const pageInner = { display: "flex", flexDirection: "column", gap: 20, padding: 24, background: "#0f1017", minHeight: "100vh", fontFamily: "'Inter', 'Outfit', sans-serif" };
-const headerRow = { padding: "16px 24px", borderRadius: 16, background: "#12131c", border: "1px solid #232533", display: "flex", justifyContent: "space-between", alignItems: "center" };
-const eyebrow = { fontSize: 11, color: "#7c829e", letterSpacing: 1, fontWeight: 600, marginBottom: 4 };
-const title = { margin: 0, fontSize: 24, color: "#ffffff", letterSpacing: "-0.5px" };
-const badge = { display: "flex", flexDirection: "column", textAlign: "right" };
-
-const mainGrid = { display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: 24 };
-const glassCard = { background: "#12131c", borderRadius: 16, border: "1px solid #232533", padding: 24, boxShadow: "0 10px 30px rgba(0,0,0,0.2)" };
-const sectionTitle = { fontSize: 18, marginTop: 0, color: "#ffffff", marginBottom: 20, fontWeight: 600, letterSpacing: "-0.3px" };
-const formStack = { display: "flex", flexDirection: "column", gap: 16 };
-const fieldCol = { display: "flex", flexDirection: "column", gap: 8 };
-const fieldLabel = { fontSize: 11, color: "#7c829e", fontWeight: 600, letterSpacing: "0.05em" };
-const input = { width: "100%", padding: "12px 14px", background: "#1a1b26", border: "1px solid #323546", borderRadius: 8, color: "#ffffff", fontSize: 14, outline: "none", boxSizing: "border-box", transition: "all 0.2s ease" };
-
-const primaryButton = { padding: "12px 24px", borderRadius: 8, border: "none", background: "#ffffff", color: "#0f1017", fontWeight: 600, cursor: "pointer", fontSize: 14, transition: "all 0.2s ease" };
-const ghostButton = { padding: "12px 24px", borderRadius: 8, border: "1px solid #323546", background: "transparent", color: "#ffffff", cursor: "pointer", fontSize: 14, fontWeight: 600, transition: "all 0.2s ease" };
-
-const applicantList = { display: "flex", flexDirection: "column", gap: 12 };
-const infoText = { fontSize: 14, color: "#7c829e" };
-
-const applicantItem = { padding: 16, background: "#1a1b26", borderRadius: 12, border: "1px solid #232533" };
-const appHeader = { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 };
-const appInfo = { display: "flex", flexDirection: "column", gap: 4 };
-const appName = { fontSize: 16, fontWeight: 600, color: "#ffffff" };
-const appRole = { fontSize: 13, color: "#6b5ce7", fontWeight: 500 };
-
-const appMeta = { display: "flex", gap: 16, fontSize: 13, color: "#7c829e", marginBottom: 16 };
-const appActions = { display: "flex", gap: 16, paddingTop: 12, borderTop: "1px solid #232533" };
-const actionLink = { background: "none", border: "none", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer", padding: 0 };
-
-const statusBadge = (status) => ({
-  fontSize: 11,
-  fontWeight: 600,
-  padding: "4px 10px",
-  borderRadius: 999,
-  background: status === "Hired" ? "rgba(16, 185, 129, 0.1)" : status === "Rejected" ? "rgba(242, 109, 125, 0.1)" : "rgba(107, 92, 231, 0.1)",
-  color: status === "Hired" ? "#10b981" : status === "Rejected" ? "#f26d7d" : "#a29bfe",
-});
